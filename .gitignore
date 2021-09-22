@@ -1,0 +1,12 @@
+
+# assets
+assets
+
+# compiled shaders
+.spv
+
+# visual studio files
+.vs
+Debug
+x86
+x64
