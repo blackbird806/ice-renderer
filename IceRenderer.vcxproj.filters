@@ -18,7 +18,7 @@
     <ClCompile Include="source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\vulkanContext.cpp">
+    <ClCompile Include="source\vulkanContextLegacy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\utility.cpp">
@@ -36,12 +36,15 @@
     <ClCompile Include="source\vkhDeviceContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\vulkanContext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\ice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\vulkanContext.hpp">
+    <ClInclude Include="source\vulkanContextLegacy.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\utility.hpp">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\vkhInstance.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\vulkanContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

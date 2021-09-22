@@ -26,6 +26,7 @@
     <ClCompile Include="source\vkhInstance.cpp" />
     <ClCompile Include="source\vma.cpp" />
     <ClCompile Include="source\vulkanContext.cpp" />
+    <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\vkhDeviceContext.hpp" />
@@ -34,6 +35,7 @@
     <ClInclude Include="source\vkhBuffer.hpp" />
     <ClInclude Include="source\vkhInstance.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
+    <ClInclude Include="source\vulkanContextLegacy.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

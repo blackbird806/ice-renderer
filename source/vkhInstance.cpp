@@ -5,14 +5,17 @@
 #include "ice.hpp"
 
 // @Review
-VkBool32 debugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT  messageSeverity,
+static VkBool32 debugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT  messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
 	VkDebugUtilsMessengerCallbackDataEXT const* callbackData,
 	void* userData)
 {
+	if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
+		return VK_FALSE;
+	
 	auto const messageTypeStr = vk::to_string(vk::DebugUtilsMessageTypeFlagsEXT(messageType));
 	auto const messageSeverityStr = vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT(messageSeverity));
-	printf("[vulkan debug callback (%s %s) ] : %s", messageTypeStr.c_str(), messageSeverityStr.c_str(), callbackData->pMessage);
+	printf("[vulkan debug callback (%s %s) ] : %s\n", messageTypeStr.c_str(), messageSeverityStr.c_str(), callbackData->pMessage);
 	return VK_FALSE;
 }
 
@@ -48,7 +51,7 @@ static std::vector<const char*> getGlfwRequiredExtensions(bool validationLayersE
 	return extensions;
 }
 
-void vkh::Instance::create(const char* appName, const char* engineName, std::vector<const char*> validationLayers_, vk::AllocationCallbacks* alloc)
+void vkh::Instance::create(const char* appName, const char* engineName, std::span<const char*> validationLayers_, vk::AllocationCallbacks* alloc)
 
 {
 	// disable validation layers if none provided
@@ -56,7 +59,7 @@ void vkh::Instance::create(const char* appName, const char* engineName, std::vec
 		throw std::runtime_error("validation layers requested, but not available!");
 
 	allocationCallbacks = alloc;
-	validationLayers = std::move(validationLayers_);
+	validationLayers = std::vector(validationLayers_.begin(), validationLayers_.end());
 	
 	vk::ApplicationInfo appInfo = {};
 	appInfo.pApplicationName = appName;

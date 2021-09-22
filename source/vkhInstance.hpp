@@ -1,12 +1,13 @@
 #pragma once
 
+#include <span>
 #include <vulkan/vulkan.hpp>
 
 namespace vkh
 {
 	struct Instance
 	{
-		void create(const char* appName, const char* engineName, std::vector<const char*> validationLayers_, vk::AllocationCallbacks* alloc);
+		void create(const char* appName, const char* engineName, std::span<const char*> validationLayers_, vk::AllocationCallbacks* alloc);
 		void destroy();
 		
 		bool validationLayersEnabled() const noexcept;

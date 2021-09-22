@@ -50,10 +50,10 @@ void vkh::DeviceContext::checkRequiredExtensions(vk::PhysicalDevice physicalDevi
 
 
 void vkh::DeviceContext::create(vkh::Instance const& instance, vk::SurfaceKHR const& surface,
-	std::vector<const char*> requiredExtensions_)
+	std::span<const char*> requiredExtensions_)
 {
 	allocationCallbacks = instance.allocationCallbacks;
-	requiredExtensions = std::move(requiredExtensions_);
+	requiredExtensions = std::vector(requiredExtensions_.begin(), requiredExtensions_.end());
 
 	// @TODO choose better device
 	physicalDevice = instance.handle->enumeratePhysicalDevices()[0];
@@ -130,4 +130,18 @@ void vkh::DeviceContext::create(vkh::Instance const& instance, vk::SurfaceKHR co
 	computeQueue = device.getQueue(computeFamilyIndex, 0);
 	presentQueue = device.getQueue(presentFamilyIndex, 0);
 	transferQueue = device.getQueue(transferFamilyIndex, 0);
+
+	vma::AllocatorCreateInfo allocatorInfo;
+	allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_1;
+	allocatorInfo.instance = *instance.handle;
+	allocatorInfo.device = device;
+	allocatorInfo.physicalDevice = physicalDevice;
+	allocatorInfo.pAllocationCallbacks = allocationCallbacks;
+
+	gpuAllocator = vma::createAllocator(allocatorInfo);
+}
+
+void vkh::DeviceContext::destroy()
+{
+	device.destroy(allocationCallbacks);
 }

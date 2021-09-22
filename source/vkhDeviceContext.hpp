@@ -10,13 +10,13 @@ namespace vkh
 {
 	struct DeviceContext
 	{
-		void create(vkh::Instance const& instance, vk::SurfaceKHR const& surface_, std::vector<const char*> requiredExtensions_);
+		void create(vkh::Instance const& instance, vk::SurfaceKHR const& surface_, std::span<const char*> requiredExtensions_);
 		void destroy();
 		void checkRequiredExtensions(vk::PhysicalDevice physicalDevice) const;
 		
 		vk::Device device;
 		vk::PhysicalDevice physicalDevice;
-		vk::AllocationCallbacks allocationCallbacks;
+		vk::AllocationCallbacks* allocationCallbacks;
 		std::vector<const char*> requiredExtensions;
 		
 		vma::Allocator gpuAllocator;
