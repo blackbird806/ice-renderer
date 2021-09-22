@@ -1,5 +1,4 @@
 #include "vulkanContext.hpp"
-
 #include <GLFW/glfw3.h>
 
 VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
@@ -24,4 +23,12 @@ void VulkanContext::createSurface()
 	VkSurfaceKHR tmpSurface;
 	glfwCreateWindowSurface(*instance.handle, window, reinterpret_cast<VkAllocationCallbacks*>(instance.allocationCallbacks), &tmpSurface);
 	surface = tmpSurface;
+}
+
+
+
+void VulkanContext::createSwapchain()
+{
+
+
 }
