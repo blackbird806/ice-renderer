@@ -22,6 +22,8 @@
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\vkhBuffer.cpp" />
+    <ClCompile Include="source\vkhDeviceContext.cpp" />
+    <ClCompile Include="source\vkhInstance.cpp" />
     <ClCompile Include="source\vma.cpp" />
     <ClCompile Include="source\vulkanContext.cpp" />
   </ItemGroup>
@@ -30,6 +32,7 @@
     <ClInclude Include="source\ice.hpp" />
     <ClInclude Include="source\utility.hpp" />
     <ClInclude Include="source\vkhBuffer.hpp" />
+    <ClInclude Include="source\vkhInstance.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
