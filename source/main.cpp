@@ -1,5 +1,6 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
+
 #include "vulkanContext.hpp"
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -11,12 +12,11 @@ int main()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-
+	
 	VulkanContext context(window);
 	
 	return 0;
 }
-
 
 // OLD MAIN
 //#include "vulkanContextLegacy.hpp"

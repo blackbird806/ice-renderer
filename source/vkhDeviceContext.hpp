@@ -18,6 +18,8 @@ namespace vkh
 		vk::PhysicalDevice physicalDevice;
 		vk::AllocationCallbacks* allocationCallbacks;
 		std::vector<const char*> requiredExtensions;
+
+		vk::CommandPool commandPool;
 		
 		vma::Allocator gpuAllocator;
 

@@ -20,23 +20,28 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\thirdParty\SPIRV-Reflect\spirv_reflect.c" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\vkhBuffer.cpp" />
+    <ClCompile Include="source\vkhCommandBuffers.cpp" />
     <ClCompile Include="source\vkhDeviceContext.cpp" />
     <ClCompile Include="source\vkhImage.cpp" />
     <ClCompile Include="source\vkhInstance.cpp" />
+    <ClCompile Include="source\vkhShader.cpp" />
     <ClCompile Include="source\vkhSwapchain.cpp" />
     <ClCompile Include="source\vma.cpp" />
     <ClCompile Include="source\vulkanContext.cpp" />
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\vkhCommandBuffers.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />
     <ClInclude Include="source\ice.hpp" />
     <ClInclude Include="source\utility.hpp" />
     <ClInclude Include="source\vkhBuffer.hpp" />
     <ClInclude Include="source\vkhImage.hpp" />
     <ClInclude Include="source\vkhInstance.hpp" />
+    <ClInclude Include="source\vkhShader.hpp" />
     <ClInclude Include="source\vkhSwapchain.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
     <ClInclude Include="source\vulkanContextLegacy.hpp" />

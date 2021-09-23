@@ -48,7 +48,6 @@ void vkh::DeviceContext::checkRequiredExtensions(vk::PhysicalDevice physicalDevi
 	}
 }
 
-
 void vkh::DeviceContext::create(vkh::Instance const& instance, vk::SurfaceKHR const& surface,
 	std::span<const char*> requiredExtensions_)
 {
@@ -139,9 +138,17 @@ void vkh::DeviceContext::create(vkh::Instance const& instance, vk::SurfaceKHR co
 	allocatorInfo.pAllocationCallbacks = allocationCallbacks;
 
 	gpuAllocator = vma::createAllocator(allocatorInfo);
+
+	vk::CommandPoolCreateInfo poolCreateInfo{};
+	poolCreateInfo.queueFamilyIndex = graphicsFamilyIndex;
+	poolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+	
+	commandPool = device.createCommandPool(poolCreateInfo, allocationCallbacks);
 }
 
 void vkh::DeviceContext::destroy()
 {
+	device.destroyCommandPool(commandPool, allocationCallbacks);
+	gpuAllocator.destroy();
 	device.destroy(allocationCallbacks);
 }

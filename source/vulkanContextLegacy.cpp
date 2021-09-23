@@ -709,7 +709,7 @@ void VulkanContextLegacy::createGraphicsPipeline()
 	viewport.maxDepth = 1.0f;
 
 	vk::Rect2D scissor = {};
-	scissor.offset = { 0, 0 };
+	scissor.offset = vk::Offset2D{ 0, 0 };
 	scissor.extent = swapchainExtent;
 
 	vk::PipelineViewportStateCreateInfo viewportState = {};
@@ -746,8 +746,6 @@ void VulkanContextLegacy::createGraphicsPipeline()
 	depthStencil.minDepthBounds = 0.0f; // Optional
 	depthStencil.maxDepthBounds = 1.0f; // Optional
 	depthStencil.stencilTestEnable = VK_FALSE;
-	depthStencil.front = {}; // Optional
-	depthStencil.back = {}; // Optional
 
 	vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
 	colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -1222,14 +1220,14 @@ void VulkanContextLegacy::generateMipmaps(vk::Image image, vk::Format imageForma
 			{}, {}, { barrier });
 
 		vk::ImageBlit blit{};
-		blit.srcOffsets[0] = { 0, 0, 0 };
-		blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+		blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+		blit.srcOffsets[1] = vk::Offset3D{ mipWidth, mipHeight, 1 };
 		blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		blit.srcSubresource.mipLevel = i - 1;
 		blit.srcSubresource.baseArrayLayer = 0;
 		blit.srcSubresource.layerCount = 1;
-		blit.dstOffsets[0] = { 0, 0, 0 };
-		blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+		blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+		blit.dstOffsets[1] = vk::Offset3D{ mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
 		blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
 		blit.dstSubresource.mipLevel = i;
 		blit.dstSubresource.baseArrayLayer = 0;
@@ -1337,7 +1335,7 @@ void VulkanContextLegacy::recordCommandBuffers()
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = renderPass;
 		renderPassInfo.framebuffer = framebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 		renderPassInfo.renderArea.extent = swapchainExtent;
 
 		vk::ClearValue clearsValues[2];

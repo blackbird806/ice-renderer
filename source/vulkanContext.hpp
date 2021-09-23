@@ -4,7 +4,7 @@
 #include "vkhDeviceContext.hpp"
 
 #include "ice.hpp"
-#include "vkhImage.hpp"
+#include "vkhSwapchain.hpp"
 
 struct GLFWwindow;
 
@@ -14,14 +14,13 @@ struct VulkanContext
 	~VulkanContext();
 	
 	void createSurface();
-	void createSwapchain();
 
 	uint const maxFramesInFlight = 2;
 	bool vsync = false;
 	
 	vkh::DeviceContext deviceContext;
 	vkh::Instance instance;
-
+	vkh::Swapchain swapchain;
 	
 	GLFWwindow* window;
 	vk::SurfaceKHR surface;
