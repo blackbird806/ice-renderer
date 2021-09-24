@@ -6,7 +6,7 @@ namespace vkh
 {
 	struct Image
 	{
-		void create(vkh::DeviceContext* ctx, vk::ImageCreateInfo imageInfo, vma::AllocationCreateInfo allocInfo);
+		void create(vkh::DeviceContext& ctx, vk::ImageCreateInfo imageInfo, vma::AllocationCreateInfo allocInfo);
 		void destroy();
 
 		~Image();

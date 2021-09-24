@@ -2,10 +2,9 @@
 
 using namespace vkh;
 
-void Image::create(vkh::DeviceContext* ctx, vk::ImageCreateInfo imageInfo_, vma::AllocationCreateInfo allocInfo)
+void Image::create(vkh::DeviceContext& ctx, vk::ImageCreateInfo imageInfo_, vma::AllocationCreateInfo allocInfo)
 {
-	assert(ctx);
-	deviceContext = ctx;
+	deviceContext = &ctx;
 	imageInfo = imageInfo_;
 
 	vk::Result res = deviceContext->gpuAllocator.createImage(&imageInfo, &allocInfo, &handle, &allocation, nullptr);
@@ -15,7 +14,11 @@ void Image::create(vkh::DeviceContext* ctx, vk::ImageCreateInfo imageInfo_, vma:
 
 void Image::destroy()
 {
-	deviceContext->gpuAllocator.destroyImage(handle, allocation);
+	if (handle)
+	{
+		deviceContext->gpuAllocator.destroyImage(handle, allocation);
+		handle = vk::Image();
+	}
 }
 
 Image::~Image()

@@ -30,6 +30,7 @@
     <ClCompile Include="source\vkhInstance.cpp" />
     <ClCompile Include="source\vkhShader.cpp" />
     <ClCompile Include="source\vkhSwapchain.cpp" />
+    <ClCompile Include="source\vkhUtility.cpp" />
     <ClCompile Include="source\vma.cpp" />
     <ClCompile Include="source\vulkanContext.cpp" />
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
@@ -45,6 +46,7 @@
     <ClInclude Include="source\vkhInstance.hpp" />
     <ClInclude Include="source\vkhShader.hpp" />
     <ClInclude Include="source\vkhSwapchain.hpp" />
+    <ClInclude Include="source\vkhUtility.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
     <ClInclude Include="source\vulkanContextLegacy.hpp" />
   </ItemGroup>

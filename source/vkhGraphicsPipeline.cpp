@@ -5,36 +5,7 @@
 
 #include "vkhShader.hpp"
 #include "vkhDeviceContext.hpp"
-
-static vk::Format findSupportedFormat(vk::PhysicalDevice physicalDevice, const std::vector<vk::Format>& candidates, const vk::ImageTiling tiling, const vk::FormatFeatureFlags features)
-{
-	for (auto format : candidates)
-	{
-		vk::FormatProperties props = physicalDevice.getFormatProperties(format);;
-
-		if (tiling == vk::ImageTiling::eLinear && (props.linearTilingFeatures & features) == features)
-		{
-			return format;
-		}
-
-		if (tiling == vk::ImageTiling::eOptimal && (props.optimalTilingFeatures & features) == features)
-		{
-			return format;
-		}
-	}
-
-	throw std::runtime_error("failed to find supported format");
-}
-
-
-static vk::Format findDepthFormat(vk::PhysicalDevice physicalDevice)
-{
-	return findSupportedFormat(
-		physicalDevice,
-		{ vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint },
-		vk::ImageTiling::eOptimal,
-		vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-}
+#include "vkhUtility.hpp"
 
 vk::UniqueRenderPass vkh::createDefaultRenderPass(vkh::DeviceContext& deviceContext,
 	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
@@ -115,9 +86,8 @@ vk::UniqueRenderPass vkh::createDefaultRenderPass(vkh::DeviceContext& deviceCont
 }
 
 void vkh::GrpahicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv,
-		std::span<uint8> fragSpv, vk::UniqueRenderPass&& renderPass_, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples)
+		std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples)
 {
-	renderPass = std::move(renderPass_);
 	
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
@@ -278,7 +248,7 @@ void vkh::GrpahicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<
 	pipelineInfo.basePipelineHandle = nullptr; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 	pipelineInfo.layout = *pipelineLayout;
-	pipelineInfo.renderPass = *renderPass;
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 
 	pipeline = deviceContext.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, deviceContext.allocationCallbacks);
@@ -287,7 +257,6 @@ void vkh::GrpahicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<
 void vkh::GrpahicsPipeline::destroy()
 {
 	descriptorSetLayouts.clear();
-	renderPass.reset();
 	pipelineLayout.reset();
 	pipeline.reset();
 }

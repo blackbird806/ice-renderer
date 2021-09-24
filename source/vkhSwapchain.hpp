@@ -16,9 +16,9 @@ namespace vkh
 		
 		vkh::DeviceContext* deviceContext;
 		vk::UniqueSwapchainKHR swapchain;
-		vk::Format swapchainFormat;
-		vk::Extent2D swapchainExtent;
-		std::vector<vk::Image> swapchainImages;
-		std::vector<vk::UniqueImageView> swapchainImageViews;
+		vk::Format format;
+		vk::Extent2D extent;
+		std::vector<vk::Image> images;
+		std::vector<vk::UniqueImageView> imageViews;
 	};
 }

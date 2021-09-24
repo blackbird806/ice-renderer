@@ -11,14 +11,13 @@ namespace vkh
 	
 	struct GrpahicsPipeline
 	{
-		void create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::UniqueRenderPass&& renderPass_, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
+		void create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
 
 		void destroy();
 
 		std::vector<vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
 		vk::UniquePipeline pipeline;
 		vk::UniquePipelineLayout pipelineLayout;
-		vk::UniqueRenderPass renderPass;
 	};
 	
 }

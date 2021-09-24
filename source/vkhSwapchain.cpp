@@ -110,7 +110,7 @@ void Swapchain::create(vkh::DeviceContext* ctx, GLFWwindow* window, vk::SurfaceK
 
 	auto const surfaceFormat = chooseSwapSurfaceFormat(details.formats);
 	auto const presentMode = chooseSwapPresentMode(details.presentModes, vsync);
-	swapchainExtent = chooseSwapExtent(window, details.capabilities);
+	extent = chooseSwapExtent(window, details.capabilities);
 
 	auto const device = deviceContext->device;
 	
@@ -119,7 +119,7 @@ void Swapchain::create(vkh::DeviceContext* ctx, GLFWwindow* window, vk::SurfaceK
 	createInfo.minImageCount = minImages;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
-	createInfo.imageExtent = swapchainExtent;
+	createInfo.imageExtent = extent;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst;
 	createInfo.preTransform = details.capabilities.currentTransform;
@@ -145,15 +145,15 @@ void Swapchain::create(vkh::DeviceContext* ctx, GLFWwindow* window, vk::SurfaceK
 	swapchain = device.createSwapchainKHRUnique(createInfo, deviceContext->allocationCallbacks);
 
 	//minImages = details.capabilities.minImageCount;
-	swapchainFormat = surfaceFormat.format;
-	swapchainImages = device.getSwapchainImagesKHR(*swapchain);
+	format = surfaceFormat.format;
+	images = device.getSwapchainImagesKHR(*swapchain);
 
-	for (auto const& image : swapchainImages)
+	for (auto const& image : images)
 	{
 		vk::ImageViewCreateInfo imageViewCreateInfo = {};
 		imageViewCreateInfo.image = image;
 		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-		imageViewCreateInfo.format = swapchainFormat;
+		imageViewCreateInfo.format = format;
 		imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
 		imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
 		imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
@@ -164,14 +164,14 @@ void Swapchain::create(vkh::DeviceContext* ctx, GLFWwindow* window, vk::SurfaceK
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-		swapchainImageViews.push_back(device.createImageViewUnique(imageViewCreateInfo, deviceContext->allocationCallbacks));
+		imageViews.push_back(device.createImageViewUnique(imageViewCreateInfo, deviceContext->allocationCallbacks));
 	}
 }
 
 void Swapchain::destroy()
 {
 	swapchain.reset();
-	swapchainImageViews.clear();
+	imageViews.clear();
 }
 
 Swapchain::~Swapchain()
