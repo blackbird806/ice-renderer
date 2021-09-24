@@ -4,6 +4,11 @@
 #include "utility.hpp"
 #include "vkhShader.hpp"
 
+static std::span<uint8> toSpan(std::vector<char> const& vec)
+{
+	return std::span((uint8*)vec.data(), vec.size());
+}
+
 VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 {
 	const char* validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -13,13 +18,19 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 	deviceContext.create(instance, surface, extensions);
 	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, false);
 
-	auto const data = readBinFile("shaders/vert.spv");
-	vkh::ShaderReflector shader(std::span(((uint8 const*)data.data()), data.size()));
-	shader.getVertexDescriptions();
+	auto const vertSpv = readBinFile("shaders/vert.spv");
+	auto const fragSpv = readBinFile("shaders/frag.spv");
+
+	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e1;
+	vk::Format const colorFormat = swapchain.swapchainFormat;
+	graphicsPipeline.create(deviceContext, toSpan(vertSpv), toSpan(fragSpv),
+		vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples),
+		swapchain.swapchainExtent, msaaSamples);
 }
 
 VulkanContext::~VulkanContext()
 {
+	graphicsPipeline.destroy();
 	swapchain.destroy();
 	deviceContext.destroy();
 	instance.handle->destroySurfaceKHR(surface);

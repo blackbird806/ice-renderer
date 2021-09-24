@@ -54,6 +54,9 @@
     <ClCompile Include="source\thirdParty\SPIRV-Reflect\spirv_reflect.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\vkhGraphicsPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\ice.hpp">
@@ -87,6 +90,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\vkhShader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\vkhGraphicsPipeline.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

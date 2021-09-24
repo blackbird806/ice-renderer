@@ -1,10 +1,10 @@
 #pragma once
 
+#include "ice.hpp"
 #include "vkhInstance.hpp"
 #include "vkhDeviceContext.hpp"
-
-#include "ice.hpp"
 #include "vkhSwapchain.hpp"
+#include "vkhGraphicsPipeline.hpp"
 
 struct GLFWwindow;
 
@@ -21,6 +21,7 @@ struct VulkanContext
 	vkh::DeviceContext deviceContext;
 	vkh::Instance instance;
 	vkh::Swapchain swapchain;
+	vkh::GrpahicsPipeline graphicsPipeline;
 	
 	GLFWwindow* window;
 	vk::SurfaceKHR surface;

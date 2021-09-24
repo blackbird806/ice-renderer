@@ -30,17 +30,17 @@ namespace vkh
 		};
 		
 		[[nodiscard]] VertexDescription getVertexDescriptions();
-		[[nodiscard]] DescriptorSetLayoutData getDescriptorSetLayoutData();
-		
+		[[nodiscard]] std::vector<ShaderReflector::DescriptorSetLayoutData> getDescriptorSetLayoutData();
+
+	private:
 		SpvReflectShaderModule module;
 	};
 
 	struct Shader
 	{
 		void create(DeviceContext* deviceContext, std::span<uint8 const> spvCode);
-
 		void destroy();
-		
+
 		vk::UniqueShaderModule shaderModule;
 	};
 }

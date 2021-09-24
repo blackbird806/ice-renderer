@@ -204,7 +204,8 @@ ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions()
 }
 
 // https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp
-ShaderReflector::DescriptorSetLayoutData ShaderReflector::getDescriptorSetLayoutData()
+// TODO get push constants
+std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescriptorSetLayoutData()
 {
 	uint32_t count = 0;
 	SpvReflectResult result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
@@ -239,6 +240,7 @@ ShaderReflector::DescriptorSetLayoutData ShaderReflector::getDescriptorSetLayout
 		layout.create_info.bindingCount = refl_set.binding_count;
 		layout.create_info.pBindings = layout.bindings.data();
 	}
+	return set_layouts;
 }
 
 void Shader::create(DeviceContext* deviceContext, std::span<uint8 const> spvCode)

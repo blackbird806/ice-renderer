@@ -25,6 +25,7 @@
     <ClCompile Include="source\vkhBuffer.cpp" />
     <ClCompile Include="source\vkhCommandBuffers.cpp" />
     <ClCompile Include="source\vkhDeviceContext.cpp" />
+    <ClCompile Include="source\vkhGraphicsPipeline.cpp" />
     <ClCompile Include="source\vkhImage.cpp" />
     <ClCompile Include="source\vkhInstance.cpp" />
     <ClCompile Include="source\vkhShader.cpp" />
@@ -39,6 +40,7 @@
     <ClInclude Include="source\ice.hpp" />
     <ClInclude Include="source\utility.hpp" />
     <ClInclude Include="source\vkhBuffer.hpp" />
+    <ClInclude Include="source\vkhGraphicsPipeline.hpp" />
     <ClInclude Include="source\vkhImage.hpp" />
     <ClInclude Include="source\vkhInstance.hpp" />
     <ClInclude Include="source\vkhShader.hpp" />
