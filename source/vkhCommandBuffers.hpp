@@ -9,7 +9,7 @@ namespace vkh
 
 	struct CommandBuffers
 	{
-		void create(vkh::DeviceContext* ctx, uint size);
+		void create(vkh::DeviceContext& ctx, uint size);
 
 		vk::CommandBuffer begin(uint index);
 

@@ -15,7 +15,11 @@ void Buffer::create(vma::Allocator gpuAlloc, vk::BufferCreateInfo bufferInfo, vm
 
 void Buffer::destroy()
 {
-	gpuAllocator.destroyBuffer(buffer, allocation);
+	if (buffer)
+	{
+		gpuAllocator.destroyBuffer(buffer, allocation);
+		buffer = vk::Buffer();
+	}
 }
 
 void Buffer::writeData(std::span<uint8> data)

@@ -14,7 +14,8 @@ int main()
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	
 	VulkanContext context(window);
-	
+
+	glfwTerminate();
 	return 0;
 }
 

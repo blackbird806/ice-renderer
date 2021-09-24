@@ -85,7 +85,7 @@ vk::UniqueRenderPass vkh::createDefaultRenderPass(vkh::DeviceContext& deviceCont
 	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
 }
 
-void vkh::GrpahicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv,
+void vkh::GraphicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv,
 		std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples)
 {
 	
@@ -254,7 +254,7 @@ void vkh::GrpahicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<
 	pipeline = deviceContext.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, deviceContext.allocationCallbacks);
 }
 
-void vkh::GrpahicsPipeline::destroy()
+void vkh::GraphicsPipeline::destroy()
 {
 	descriptorSetLayouts.clear();
 	pipelineLayout.reset();

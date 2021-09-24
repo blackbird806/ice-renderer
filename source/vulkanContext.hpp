@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ice.hpp"
+#include "vkhCommandBuffers.hpp"
 #include "vkhInstance.hpp"
 #include "vkhDeviceContext.hpp"
 #include "vkhSwapchain.hpp"
@@ -17,6 +18,7 @@ struct VulkanContext
 	void createMsResources();
 	void createDepthResources();
 	void createFramebuffers();
+	void createSyncResources();
 	
 	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e1;
 	uint const maxFramesInFlight = 2;
@@ -27,8 +29,14 @@ struct VulkanContext
 	vkh::Swapchain swapchain;
 	vk::UniqueRenderPass defaultRenderPass;
 	std::vector<vk::UniqueFramebuffer> framebuffers;
-	vkh::GrpahicsPipeline graphicsPipeline;
+	vkh::GraphicsPipeline graphicsPipeline;
+	vkh::CommandBuffers commandBuffers;
 
+	std::vector<vk::UniqueSemaphore> imageAvailableSemaphores;
+	std::vector<vk::UniqueSemaphore> renderFinishedSemaphores;
+
+	std::vector<vk::UniqueFence> inFlightFences;
+	
 	vkh::Image msImage;
 	vk::UniqueImageView msImageView;
 

@@ -20,7 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\mesh.cpp" />
     <ClCompile Include="source\thirdParty\SPIRV-Reflect\spirv_reflect.c" />
+    <ClCompile Include="source\thirdParty\tiny\tiny_obj_loader.cpp" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\vkhBuffer.cpp" />
     <ClCompile Include="source\vkhCommandBuffers.cpp" />
@@ -36,6 +38,7 @@
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />
     <ClInclude Include="source\ice.hpp" />

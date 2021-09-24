@@ -4,6 +4,7 @@
 #include "utility.hpp"
 #include "vkhShader.hpp"
 #include "vkhUtility.hpp"
+#include "mesh.hpp"
 
 static std::span<uint8> toSpan(std::vector<char> const& vec)
 {
@@ -12,6 +13,8 @@ static std::span<uint8> toSpan(std::vector<char> const& vec)
 
 VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 {
+	auto loadedMesh = loadObj("assets/viking_room.obj");
+	
 	const char* validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
 	instance.create("ice renderer", "iceEngine", validationLayers, nullptr);
 	createSurface();
@@ -28,10 +31,16 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 	createMsResources();
 	createDepthResources();
 	createFramebuffers();
+	commandBuffers.create(deviceContext, maxFramesInFlight);
+	createSyncResources();
 }
 
 VulkanContext::~VulkanContext()
 {
+	renderFinishedSemaphores.clear();
+	imageAvailableSemaphores.clear();
+	inFlightFences.clear();
+	commandBuffers.destroy();
 	msImageView.reset();
 	depthImageView.reset();
 	depthImage.destroy();
@@ -144,3 +153,20 @@ void VulkanContext::createFramebuffers()
 	}
 }
 
+void VulkanContext::createSyncResources()
+{
+	imageAvailableSemaphores.reserve(maxFramesInFlight);
+	renderFinishedSemaphores.reserve(maxFramesInFlight);
+	inFlightFences.reserve(maxFramesInFlight);
+
+	for (int i = 0; i < maxFramesInFlight; i++)
+	{
+		vk::SemaphoreCreateInfo semaphoreCreateInfo{};
+		imageAvailableSemaphores.push_back(deviceContext.device.createSemaphoreUnique(semaphoreCreateInfo, deviceContext.allocationCallbacks));
+		renderFinishedSemaphores.push_back(deviceContext.device.createSemaphoreUnique(semaphoreCreateInfo, deviceContext.allocationCallbacks));
+
+		vk::FenceCreateInfo fenceCreateInfo{};
+		fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+		inFlightFences.push_back(deviceContext.device.createFenceUnique(fenceCreateInfo, deviceContext.allocationCallbacks));
+	}
+}

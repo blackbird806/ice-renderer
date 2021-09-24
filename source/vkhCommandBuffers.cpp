@@ -3,14 +3,14 @@
 
 using namespace vkh;
 
-void CommandBuffers::create(vkh::DeviceContext* ctx, uint size)
+void CommandBuffers::create(vkh::DeviceContext& ctx, uint size)
 {
 	vk::CommandBufferAllocateInfo allocInfo;
-	allocInfo.commandPool = ctx->commandPool;
+	allocInfo.commandPool = ctx.commandPool;
 	allocInfo.commandBufferCount = size;
 	allocInfo.level = vk::CommandBufferLevel::ePrimary;
 
-	commandBuffers = ctx->device.allocateCommandBuffersUnique(allocInfo);
+	commandBuffers = ctx.device.allocateCommandBuffersUnique(allocInfo);
 }
 
 vk::CommandBuffer CommandBuffers::begin(uint index)

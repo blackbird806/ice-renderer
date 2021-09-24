@@ -12,7 +12,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny/tiny_obj_loader.h>
 
 #include "utility.hpp"

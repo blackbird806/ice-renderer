@@ -9,7 +9,7 @@ namespace vkh
 
 	vk::UniqueRenderPass createDefaultRenderPass(vkh::DeviceContext& deviceContext, vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples);
 	
-	struct GrpahicsPipeline
+	struct GraphicsPipeline
 	{
 		void create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
 
