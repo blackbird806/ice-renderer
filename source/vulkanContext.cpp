@@ -23,7 +23,7 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 	auto const fragSpv = readBinFile("shaders/frag.spv");
 
 	vk::Format const colorFormat = swapchain.format;
-	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
+	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
 	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
 	createMsResources();
 	createDepthResources();
@@ -220,7 +220,7 @@ void VulkanContext::recreateSwapchain()
 	auto const fragSpv = readBinFile("shaders/frag.spv");
 
 	vk::Format const colorFormat = swapchain.format;
-	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
+	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
 	defaultPipeline.destroy();
 	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
 
@@ -235,6 +235,8 @@ void VulkanContext::recreateSwapchain()
 
 	commandBuffers.destroy();
 	commandBuffers.create(deviceContext, maxFramesInFlight);
+	
+	onSwapchainRecreate();
 }
 
 bool VulkanContext::startFrame()

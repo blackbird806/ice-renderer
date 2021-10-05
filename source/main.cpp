@@ -3,7 +3,7 @@
 
 #include "vulkanContext.hpp"
 #include "mesh.hpp"
-
+#include "GUILayer.hpp"
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 	auto& vkContext = *static_cast<VulkanContext*>(glfwGetWindowUserPointer(window));
@@ -19,6 +19,13 @@ int main()
 	
 	VulkanContext context(window);
 	glfwSetWindowUserPointer(window, &context);
+
+	GUILayer gui;
+	gui.init(context);
+	context.onSwapchainRecreate = [&context, &gui]()
+	{
+		gui.handleSwapchainRecreation(context);
+	};
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
 	mesh.material.graphicsPipeline = &context.defaultPipeline;
@@ -48,14 +55,19 @@ int main()
 		renderPassInfo.pClearValues = clearsValues;
 
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+		
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
 			mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();
+		
+		gui.render(cmdBuffer, context.currentFrame, context.swapchain.extent);
 		cmdBuffer.end();
+
 		context.endFrame();
 	}
 	
+	gui.destroy();
 	glfwTerminate();
 	return 0;
 }

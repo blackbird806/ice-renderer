@@ -24,3 +24,31 @@ void CommandBuffers::destroy()
 {
 	commandBuffers.clear();
 }
+
+SingleTimeCommandBuffer::SingleTimeCommandBuffer(vkh::DeviceContext& ctx) : deviceContext(ctx)
+{
+	vk::CommandBufferAllocateInfo allocInfo;
+	allocInfo.commandPool = ctx.commandPool;
+	allocInfo.commandBufferCount = 1;
+	allocInfo.level = vk::CommandBufferLevel::ePrimary;
+	cmdBuffer = std::move(ctx.device.allocateCommandBuffersUnique(allocInfo)[0]);
+
+	vk::CommandBufferBeginInfo beginInfo;
+	beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+	cmdBuffer->begin(beginInfo);
+}
+
+SingleTimeCommandBuffer::~SingleTimeCommandBuffer()
+{
+	end();
+}
+
+void SingleTimeCommandBuffer::end()
+{
+	cmdBuffer->end();
+	vk::SubmitInfo submitInfo;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &cmdBuffer.get();
+	deviceContext.graphicsQueue.submit(submitInfo, vk::Fence{});
+	deviceContext.graphicsQueue.waitIdle();
+}

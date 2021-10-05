@@ -1,13 +1,11 @@
 #include "vkhGraphicsPipeline.hpp"
 
-#include <iterator>
-#include <ranges>
-
 #include "vkhShader.hpp"
 #include "vkhDeviceContext.hpp"
 #include "vkhUtility.hpp"
 
-vk::UniqueRenderPass vkh::createDefaultRenderPass(vkh::DeviceContext& deviceContext,
+
+vk::UniqueRenderPass vkh::createDefaultRenderPassMSAA(vkh::DeviceContext& deviceContext,
 	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
 {
 	vk::AttachmentDescription colorAttachment = {};

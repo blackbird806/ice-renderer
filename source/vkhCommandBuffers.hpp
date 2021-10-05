@@ -21,10 +21,24 @@ namespace vkh
 
 	struct SingleTimeCommandBuffer
 	{
-		SingleTimeCommandBuffer(vkh::DeviceContext* ctx);
-
+		SingleTimeCommandBuffer(vkh::DeviceContext& ctx);
 		~SingleTimeCommandBuffer();
 		
+		operator vk::CommandBuffer()
+		{
+			return *cmdBuffer;
+		}
+
+		operator VkCommandBuffer()
+		{
+			return (VkCommandBuffer)*cmdBuffer;
+		}
+
+		
+		void end();
+		
+	private:
+		vkh::DeviceContext& deviceContext;
 		vk::UniqueCommandBuffer cmdBuffer;
 	};
 }

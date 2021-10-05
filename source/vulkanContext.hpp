@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "ice.hpp"
 #include "vkhCommandBuffers.hpp"
 #include "vkhInstance.hpp"
@@ -30,8 +32,10 @@ struct VulkanContext
 	[[nodiscard]] bool startFrame();
 
 	void endFrame();
+
+	std::function<void()> onSwapchainRecreate;
 	
-	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e4;
+	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e1;
 	uint const maxFramesInFlight = 2;
 	uint currentFrame = 0;
 	uint32 imageIndex = 0;

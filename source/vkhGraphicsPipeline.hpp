@@ -8,7 +8,7 @@ namespace vkh
 {
 	struct DeviceContext;
 
-	vk::UniqueRenderPass createDefaultRenderPass(vkh::DeviceContext& deviceContext, vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples);
+	vk::UniqueRenderPass createDefaultRenderPassMSAA(vkh::DeviceContext& deviceContext, vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples);
 	
 	struct GraphicsPipeline
 	{

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\GUILayer.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\Material.cpp" />
     <ClCompile Include="source\mesh.cpp" />
@@ -47,6 +48,7 @@
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\GUILayer.hpp" />
     <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\Material.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
