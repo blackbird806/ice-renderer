@@ -1,8 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <glm/glm.hpp>
 
 #include "ice.hpp"
+#include "vkhBuffer.hpp"
 #include "vkhCommandBuffers.hpp"
 #include "vkhInstance.hpp"
 #include "vkhDeviceContext.hpp"
@@ -10,6 +12,15 @@
 #include "vkhGraphicsPipeline.hpp"
 
 struct GLFWwindow;
+
+struct UniformFrameConstants
+{
+	// use viewProj directly ?
+	glm::mat4 view;
+	glm::mat4 proj;
+
+	float time;
+};
 
 struct VulkanContext
 {
@@ -22,6 +33,12 @@ struct VulkanContext
 	void createFramebuffers();
 	void createSyncResources();
 	void createDescriptorPool();
+
+	void createFrameConstantBuffers();
+	void destroyFrameConstantBuffers();
+	void createFrameConstantDescriptorSets();
+	void setFrameConstantDescriptorSetsBuffers();
+	void destroyFrameConstantDescriptorSets();
 
 	void destroyDepthResources();
 	void destroyMsResources();
@@ -42,8 +59,6 @@ struct VulkanContext
 	bool vsync = false;
 	bool resized = false;
 
-	// @TODO FrameData instead ?
-	
 	vkh::DeviceContext deviceContext;
 	vkh::Instance instance;
 	vkh::Swapchain swapchain;
@@ -63,6 +78,9 @@ struct VulkanContext
 
 	vkh::Image depthImage;
 	vk::UniqueImageView depthImageView;
+
+	std::vector<vkh::Buffer> frameConstantBuffers;
+	std::vector<vk::UniqueDescriptorSet> frameConstantsDescriptorSets;
 	
 	GLFWwindow* window;
 	vk::SurfaceKHR surface;

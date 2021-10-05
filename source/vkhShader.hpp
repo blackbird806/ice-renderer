@@ -36,11 +36,4 @@ namespace vkh
 		SpvReflectShaderModule module;
 	};
 
-	struct Shader
-	{
-		void create(DeviceContext* deviceContext, std::span<uint8 const> spvCode);
-		void destroy();
-
-		vk::UniqueShaderModule shaderModule;
-	};
 }

@@ -67,6 +67,8 @@ int main()
 		context.endFrame();
 	}
 	
+	// wait idle before destroying gui
+	context.deviceContext.device.waitIdle();
 	gui.destroy();
 	glfwTerminate();
 	return 0;

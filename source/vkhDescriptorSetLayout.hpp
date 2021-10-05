@@ -9,11 +9,22 @@ namespace vkh
 
 	struct DescriptorSetLayout
 	{
+		enum SetIndex : size_t
+		{
+			FrameConstants = 0,
+			Material,
+			DrawCall,
+
+			MaxSets
+		};
+
+		using LayoutBindings_t = std::array<std::vector<vk::DescriptorSetLayoutBinding>, MaxSets>;
+		
 		void create(vkh::DeviceContext& ctx, ShaderReflector const& vertData, ShaderReflector const& fragData);
 
 		void destroy();
 		
-		std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
+		LayoutBindings_t layoutBindings;
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 		DeviceContext* deviceContext;
 	};

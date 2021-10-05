@@ -16,15 +16,20 @@ void DescriptorSetLayout::create(vkh::DeviceContext& ctx, ShaderReflector const&
 	
 	for (auto const& e : std::ranges::join_view(descriptorSetLayoutDatas))
 	{
-		layoutBindings.insert(layoutBindings.end(), e.bindings.begin(), e.bindings.end());
+		assert(e.set_number < MaxSets);
+		
+		layoutBindings[e.set_number].insert(layoutBindings[e.set_number].end(), e.bindings.begin(), e.bindings.end());
 	}
 
-	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-	descriptorSetLayoutCreateInfo.bindingCount = std::size(layoutBindings);
-	descriptorSetLayoutCreateInfo.pBindings = layoutBindings.data();
+	for (size_t i = 0; i < MaxSets; i++)
+	{
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+		descriptorSetLayoutCreateInfo.bindingCount = std::size(layoutBindings[i]);
+		descriptorSetLayoutCreateInfo.pBindings = layoutBindings[i].data();
 
-	descriptorSetLayouts.push_back(
-		ctx.device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo, ctx.allocationCallbacks));
+		descriptorSetLayouts.push_back(
+			ctx.device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo, ctx.allocationCallbacks));
+	}
 }
 
 void DescriptorSetLayout::destroy()
@@ -33,6 +38,9 @@ void DescriptorSetLayout::destroy()
 	{
 		deviceContext->device.destroyDescriptorSetLayout(descriptorLayout, deviceContext->allocationCallbacks);
 	}
-	layoutBindings.clear();
+	
+	for (auto& e : layoutBindings)
+		e.clear();
+
 	descriptorSetLayouts.clear();
 }

@@ -19,7 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="source\engine.cpp" />
     <ClCompile Include="source\GUILayer.cpp" />
+    <ClCompile Include="source\imguiThemes.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\Material.cpp" />
     <ClCompile Include="source\mesh.cpp" />
@@ -48,6 +50,7 @@
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\engine.hpp" />
     <ClInclude Include="source\GUILayer.hpp" />
     <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\Material.hpp" />
@@ -66,6 +69,9 @@
     <ClInclude Include="source\vkhUtility.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
     <ClInclude Include="source\vulkanContextLegacy.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="source\imguiThemes.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

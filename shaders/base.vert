@@ -1,6 +1,25 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject {
+// updated once per frame (descriptor set inside vkContext ?)
+// layout(set = 0, binding = 0) uniform viewProj {
+//     mat4 view;
+//     mat4 proj;
+//     float time ?
+// };
+
+// updated once per Material "bucket"
+// layout(set = 1, binding = 0) uniform material {
+//     sampler texture;
+//     float shiniess;
+//     ...
+// };
+
+// updated once per model
+// layout(set = 2, binding = 0) uniform model {
+//     mat4 model;
+// };
+
+layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;

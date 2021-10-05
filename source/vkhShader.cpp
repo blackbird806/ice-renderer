@@ -173,7 +173,7 @@ ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions() cons
 	std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
 	attributeDescriptions.reserve(inputVars.size());
 	
-	for (auto const var : inputVars)
+	for (auto* const var : inputVars)
 	{
 		vk::VertexInputAttributeDescription attributeDescription;
 		attributeDescription.location = var->location;
@@ -243,18 +243,3 @@ std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescri
 	return set_layouts;
 }
 
-void Shader::create(DeviceContext* deviceContext, std::span<uint8 const> spvCode)
-{
-	assert(deviceContext);
-	
-	vk::ShaderModuleCreateInfo shaderCreateInfo{};
-	shaderCreateInfo.codeSize = spvCode.size_bytes();
-	shaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(spvCode.data());
-
-	shaderModule = deviceContext->device.createShaderModuleUnique(shaderCreateInfo, deviceContext->allocationCallbacks);
-}
-
-void Shader::destroy()
-{
-	shaderModule.reset();
-}
