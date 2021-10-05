@@ -25,6 +25,11 @@ void Material::setBuffer(vkh::Buffer const& buffer)
 	descriptorsWriteInfos.writeInfos.push_back(bufferInfo);
 }
 
+void Material::setBuffer(std::string const& name, vkh::Buffer const& buffer)
+{
+	
+}
+
 void Material::bind(vk::CommandBuffer cmdBuffer, uint32 index)
 {
 	cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *graphicsPipeline->pipelineLayout, 0, 1, &descriptorSets[index], 0, nullptr);

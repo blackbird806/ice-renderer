@@ -21,6 +21,10 @@ struct VulkanContext
 	void createSyncResources();
 	void createDescriptorPool();
 
+	void destroyDepthResources();
+	void destroyMsResources();
+	void destroyFrameBuffers();
+	
 	void recreateSwapchain();
 	
 	[[nodiscard]] bool startFrame();
@@ -41,7 +45,7 @@ struct VulkanContext
 	vkh::Swapchain swapchain;
 	vk::UniqueRenderPass defaultRenderPass;
 	std::vector<vk::UniqueFramebuffer> framebuffers;
-	vkh::GraphicsPipeline graphicsPipeline;
+	vkh::GraphicsPipeline defaultPipeline;
 	vkh::CommandBuffers commandBuffers;
 	vk::UniqueDescriptorPool descriptorPool;
 	

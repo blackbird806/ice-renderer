@@ -10,3 +10,4 @@ assets
 Debug
 x86
 x64
+*.spv

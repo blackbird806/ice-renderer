@@ -21,14 +21,15 @@ int main()
 	glfwSetWindowUserPointer(window, &context);
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
-	mesh.material.graphicsPipeline = &context.graphicsPipeline;
-	mesh.material.descriptorSets = context.graphicsPipeline.createDescriptorSets(*context.descriptorPool, context.maxFramesInFlight);
+	mesh.material.graphicsPipeline = &context.defaultPipeline;
+	mesh.material.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, context.maxFramesInFlight);
 	mesh.material.setBuffer(mesh.uniformBuffer);
 	mesh.material.updateDescriptorSets();
 	
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+		
 		if (!context.startFrame())
 			continue;
 		
@@ -47,7 +48,7 @@ int main()
 		renderPassInfo.pClearValues = clearsValues;
 
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.graphicsPipeline.pipeline);
+			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
 			mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();

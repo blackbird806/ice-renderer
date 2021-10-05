@@ -117,6 +117,7 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
 		indexBuffer.create(ctx.gpuAllocator, indexBufferInfo, allocInfo);
 		indexBuffer.writeData(toSpan<uint8>(mesh.indices));
+		indicesCount = mesh.indices.size();
 	}
 	{
 		vk::BufferCreateInfo uniformBufferInfo;
@@ -148,4 +149,5 @@ void Mesh::draw(vk::CommandBuffer cmdBuff, uint32 index)
 	material.bind(cmdBuff, index);
 	cmdBuff.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 	cmdBuff.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
+	cmdBuff.drawIndexed(indicesCount, 1, 0, 0, 0);
 }

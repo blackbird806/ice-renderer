@@ -24,7 +24,7 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
-	graphicsPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
 	createMsResources();
 	createDepthResources();
 	createFramebuffers();
@@ -42,12 +42,10 @@ VulkanContext::~VulkanContext()
 	imageAvailableSemaphores.clear();
 	inFlightFences.clear();
 	commandBuffers.destroy();
-	msImageView.reset();
-	depthImageView.reset();
-	depthImage.destroy();
-	msImage.destroy();
-	framebuffers.clear();
-	graphicsPipeline.destroy();
+	destroyDepthResources();
+	destroyMsResources();
+	destroyFrameBuffers();
+	defaultPipeline.destroy();
 	defaultRenderPass.reset();
 	swapchain.destroy();
 	deviceContext.destroy();
@@ -188,20 +186,34 @@ void VulkanContext::createDescriptorPool()
 	descriptorPool = deviceContext.device.createDescriptorPoolUnique(poolInfo, deviceContext.allocationCallbacks);
 }
 
+void VulkanContext::destroyDepthResources()
+{
+	depthImage.destroy();
+	depthImageView.reset();
+}
+
+void VulkanContext::destroyMsResources()
+{
+	msImage.destroy();
+	msImageView.reset();
+}
+
+void VulkanContext::destroyFrameBuffers()
+{
+	framebuffers.clear();
+}
+
 void VulkanContext::recreateSwapchain()
 {
 	int width = 0, height = 0;
-	glfwGetFramebufferSize(window, &width, &height);
-	
-	while (width == 0 || height == 0) {
+	do {
 		glfwGetFramebufferSize(window, &width, &height);
 		glfwWaitEvents();
-	}
+	} while (width == 0 || height == 0);
 
 	deviceContext.device.waitIdle();
-
+	
 	swapchain.destroy();
-
 	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
 
 	auto const vertSpv = readBinFile("shaders/vert.spv");
@@ -209,10 +221,20 @@ void VulkanContext::recreateSwapchain()
 
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
-	graphicsPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+	defaultPipeline.destroy();
+	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+
+	destroyMsResources();
 	createMsResources();
+	
+	destroyDepthResources();
 	createDepthResources();
+
+	destroyFrameBuffers();
 	createFramebuffers();
+
+	commandBuffers.destroy();
+	commandBuffers.create(deviceContext, maxFramesInFlight);
 }
 
 bool VulkanContext::startFrame()
@@ -242,16 +264,16 @@ void VulkanContext::endFrame()
 	vk::SubmitInfo submitInfo{};
 	vk::Semaphore waitSemaphores[] = { *imageAvailableSemaphores[currentFrame] };
 	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.waitSemaphoreCount = std::size(waitSemaphores);
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	
 	submitInfo.commandBufferCount = 1;
 
-	submitInfo.pCommandBuffers = &commandBuffers.commandBuffers[currentFrame].get();
+	submitInfo.pCommandBuffers = &commandBuffers.commandBuffers[imageIndex].get();
 
 	vk::Semaphore signalSemaphores[] = { *renderFinishedSemaphores[currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.signalSemaphoreCount = std::size(signalSemaphores);
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
 	deviceContext.device.resetFences(1, &inFlightFences[currentFrame].get());
@@ -259,7 +281,7 @@ void VulkanContext::endFrame()
 
 	vk::PresentInfoKHR presentInfo{};
 
-	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.waitSemaphoreCount = std::size(signalSemaphores);
 	presentInfo.pWaitSemaphores = signalSemaphores;
 
 	vk::SwapchainKHR swapChains[] = { *swapchain.swapchain };

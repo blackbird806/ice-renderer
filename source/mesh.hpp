@@ -63,6 +63,8 @@ public:
 
 	void draw(vk::CommandBuffer cmdBuff, uint32);
 
+	size_t indicesCount;
+	
 	Material material;
 	vkh::Buffer vertexBuffer;
 	vkh::Buffer indexBuffer;

@@ -20,6 +20,7 @@ struct Material
 	};
 	
 	void setBuffer(vkh::Buffer const& buffer);
+	void setBuffer(std::string const& name, vkh::Buffer const& buffer);
 
 	void bind(vk::CommandBuffer cmdBuffer, uint32 index);
 	
