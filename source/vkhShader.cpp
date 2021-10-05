@@ -156,7 +156,7 @@ static uint32_t formatSize(VkFormat format)
 }
 
 // https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_io_variables.cpp
-ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions()
+ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions() const
 {
 	// Enumerate and extract shader's input variables
 	uint32_t var_count = 0;
@@ -205,7 +205,7 @@ ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions()
 
 // https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_descriptors.cpp
 // TODO get push constants
-std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescriptorSetLayoutData()
+std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescriptorSetLayoutData() const
 {
 	uint32_t count = 0;
 	SpvReflectResult result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
@@ -253,7 +253,6 @@ void Shader::create(DeviceContext* deviceContext, std::span<uint8 const> spvCode
 
 	shaderModule = deviceContext->device.createShaderModuleUnique(shaderCreateInfo, deviceContext->allocationCallbacks);
 }
-
 
 void Shader::destroy()
 {

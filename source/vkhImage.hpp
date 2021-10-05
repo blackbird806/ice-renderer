@@ -15,7 +15,6 @@ namespace vkh
 		
 		vk::Image handle;
 		vma::Allocation allocation;
-		
 		vk::ImageCreateInfo imageInfo;
 	};
 }

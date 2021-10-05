@@ -20,12 +20,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp" />
+    <ClCompile Include="source\Material.cpp" />
     <ClCompile Include="source\mesh.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="source\thirdParty\imgui\imgui_widgets.cpp" />
     <ClCompile Include="source\thirdParty\SPIRV-Reflect\spirv_reflect.c" />
     <ClCompile Include="source\thirdParty\tiny\tiny_obj_loader.cpp" />
     <ClCompile Include="source\utility.cpp" />
     <ClCompile Include="source\vkhBuffer.cpp" />
     <ClCompile Include="source\vkhCommandBuffers.cpp" />
+    <ClCompile Include="source\vkhDescriptorSetLayout.cpp" />
     <ClCompile Include="source\vkhDeviceContext.cpp" />
     <ClCompile Include="source\vkhGraphicsPipeline.cpp" />
     <ClCompile Include="source\vkhImage.cpp" />
@@ -39,7 +48,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\mesh.hpp" />
+    <ClInclude Include="source\Material.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
+    <ClInclude Include="source\vkhDescriptorSetLayout.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />
     <ClInclude Include="source\ice.hpp" />
     <ClInclude Include="source\utility.hpp" />
@@ -49,6 +60,7 @@
     <ClInclude Include="source\vkhInstance.hpp" />
     <ClInclude Include="source\vkhShader.hpp" />
     <ClInclude Include="source\vkhSwapchain.hpp" />
+    <ClInclude Include="source\vkhTexture.hpp" />
     <ClInclude Include="source\vkhUtility.hpp" />
     <ClInclude Include="source\vulkanContext.hpp" />
     <ClInclude Include="source\vulkanContextLegacy.hpp" />

@@ -19,10 +19,22 @@ struct VulkanContext
 	void createDepthResources();
 	void createFramebuffers();
 	void createSyncResources();
+	void createDescriptorPool();
+
+	void recreateSwapchain();
 	
-	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e1;
+	[[nodiscard]] bool startFrame();
+
+	void endFrame();
+	
+	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e4;
 	uint const maxFramesInFlight = 2;
+	uint currentFrame = 0;
+	uint32 imageIndex = 0;
 	bool vsync = false;
+	bool resized = false;
+
+	// @TODO FrameData instead ?
 	
 	vkh::DeviceContext deviceContext;
 	vkh::Instance instance;
@@ -31,7 +43,8 @@ struct VulkanContext
 	std::vector<vk::UniqueFramebuffer> framebuffers;
 	vkh::GraphicsPipeline graphicsPipeline;
 	vkh::CommandBuffers commandBuffers;
-
+	vk::UniqueDescriptorPool descriptorPool;
+	
 	std::vector<vk::UniqueSemaphore> imageAvailableSemaphores;
 	std::vector<vk::UniqueSemaphore> renderFinishedSemaphores;
 

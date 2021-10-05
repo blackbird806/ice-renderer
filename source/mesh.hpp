@@ -1,10 +1,19 @@
-#include <vkhBuffer.hpp>
+#pragma once
 
 #include <filesystem>
 #include <glm/glm.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+
+#include <vkhBuffer.hpp>
+#include <vkhCommandBuffers.hpp>
+
+#include "Material.hpp"
+
+namespace vkh {
+	struct DeviceContext;
+}
 
 struct LoadedMesh
 {
@@ -25,6 +34,13 @@ struct LoadedMesh
 	std::vector<uint32> indices;
 };
 
+struct ModelBuffer
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 // @TODO true hash function
 namespace std {
 	template<> struct hash<LoadedMesh::Vertex> {
@@ -39,3 +55,16 @@ namespace std {
 }
 
 LoadedMesh loadObj(std::filesystem::path const& objPath);
+
+class Mesh
+{
+public:
+	Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh);
+
+	void draw(vk::CommandBuffer cmdBuff, uint32);
+
+	Material material;
+	vkh::Buffer vertexBuffer;
+	vkh::Buffer indexBuffer;
+	vkh::Buffer uniformBuffer;
+};

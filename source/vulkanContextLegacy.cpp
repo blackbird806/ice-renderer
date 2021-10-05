@@ -1035,7 +1035,6 @@ void VulkanContextLegacy::createUniformBuffers()
 
 		device.bindBufferMemory(uniformBuffer[i], uniformBufferMemory[i], 0);
 	}
-
 }
 
 void VulkanContextLegacy::createDescriptorPool()

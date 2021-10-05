@@ -6,37 +6,38 @@
 #include "vkhUtility.hpp"
 #include "mesh.hpp"
 
-static std::span<uint8> toSpan(std::vector<char> const& vec)
-{
-	return std::span((uint8*)vec.data(), vec.size());
-}
 
 VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 {
-	auto loadedMesh = loadObj("assets/viking_room.obj");
-	
 	const char* validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
+	const char* extensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	
 	instance.create("ice renderer", "iceEngine", validationLayers, nullptr);
 	createSurface();
-	const char* extensions[] = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 	deviceContext.create(instance, surface, extensions);
-	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, false);
+	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
+
+	std::system("cd .\\shaders && shadercompile.bat");
 
 	auto const vertSpv = readBinFile("shaders/vert.spv");
 	auto const fragSpv = readBinFile("shaders/frag.spv");
 
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
-	graphicsPipeline.create(deviceContext, toSpan(vertSpv), toSpan(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+	graphicsPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
 	createMsResources();
 	createDepthResources();
 	createFramebuffers();
 	commandBuffers.create(deviceContext, maxFramesInFlight);
 	createSyncResources();
+	createDescriptorPool();
 }
 
 VulkanContext::~VulkanContext()
 {
+	deviceContext.device.waitIdle();
+	
+	descriptorPool.reset();
 	renderFinishedSemaphores.clear();
 	imageAvailableSemaphores.clear();
 	inFlightFences.clear();
@@ -169,4 +170,104 @@ void VulkanContext::createSyncResources()
 		fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
 		inFlightFences.push_back(deviceContext.device.createFenceUnique(fenceCreateInfo, deviceContext.allocationCallbacks));
 	}
+}
+
+void VulkanContext::createDescriptorPool()
+{
+	vk::DescriptorPoolSize poolSize[2];
+	poolSize[0].type = vk::DescriptorType::eUniformBuffer;
+	poolSize[0].descriptorCount = swapchain.images.size();
+	poolSize[1].type = vk::DescriptorType::eCombinedImageSampler;
+	poolSize[1].descriptorCount = swapchain.images.size();
+
+	vk::DescriptorPoolCreateInfo poolInfo{};
+	poolInfo.poolSizeCount = std::size(poolSize);
+	poolInfo.pPoolSizes = poolSize;
+	poolInfo.maxSets = swapchain.images.size();
+
+	descriptorPool = deviceContext.device.createDescriptorPoolUnique(poolInfo, deviceContext.allocationCallbacks);
+}
+
+void VulkanContext::recreateSwapchain()
+{
+	int width = 0, height = 0;
+	glfwGetFramebufferSize(window, &width, &height);
+	
+	while (width == 0 || height == 0) {
+		glfwGetFramebufferSize(window, &width, &height);
+		glfwWaitEvents();
+	}
+
+	deviceContext.device.waitIdle();
+
+	swapchain.destroy();
+
+	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
+
+	auto const vertSpv = readBinFile("shaders/vert.spv");
+	auto const fragSpv = readBinFile("shaders/frag.spv");
+
+	vk::Format const colorFormat = swapchain.format;
+	defaultRenderPass = vkh::createDefaultRenderPass(deviceContext, colorFormat, msaaSamples);
+	graphicsPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+	createMsResources();
+	createDepthResources();
+	createFramebuffers();
+}
+
+bool VulkanContext::startFrame()
+{
+	deviceContext.device.waitForFences(1, &inFlightFences[currentFrame].get(), true, UINT64_MAX);
+
+	vk::ResultValue<uint32_t> const nextImageResult = deviceContext.device.acquireNextImageKHR(*swapchain.swapchain, UINT64_MAX, *imageAvailableSemaphores[currentFrame], vk::Fence{});
+
+	if (nextImageResult.result == vk::Result::eErrorOutOfDateKHR || resized)
+	{
+		resized = false;
+		recreateSwapchain();
+		return false;
+	}
+	else if (nextImageResult.result != vk::Result::eSuccess && nextImageResult.result != vk::Result::eSuboptimalKHR)
+	{
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+
+	imageIndex = nextImageResult.value;
+
+	return true;
+}
+
+void VulkanContext::endFrame()
+{
+	vk::SubmitInfo submitInfo{};
+	vk::Semaphore waitSemaphores[] = { *imageAvailableSemaphores[currentFrame] };
+	vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	
+	submitInfo.commandBufferCount = 1;
+
+	submitInfo.pCommandBuffers = &commandBuffers.commandBuffers[currentFrame].get();
+
+	vk::Semaphore signalSemaphores[] = { *renderFinishedSemaphores[currentFrame] };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	deviceContext.device.resetFences(1, &inFlightFences[currentFrame].get());
+	deviceContext.graphicsQueue.submit(1, &submitInfo, inFlightFences[currentFrame].get());
+
+	vk::PresentInfoKHR presentInfo{};
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+
+	vk::SwapchainKHR swapChains[] = { *swapchain.swapchain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+
+	deviceContext.presentQueue.presentKHR(presentInfo);
+	
+	currentFrame = (currentFrame + 1) % maxFramesInFlight;
 }

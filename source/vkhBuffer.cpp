@@ -7,6 +7,7 @@ void Buffer::create(vma::Allocator gpuAlloc, vk::BufferCreateInfo bufferInfo, vm
 	gpuAllocator = gpuAlloc;
 	
 	vk::Result res = gpuAllocator.createBuffer(&bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+	size = bufferInfo.size;
 	if (res != vk::Result::eSuccess)
 	{
 		throw std::runtime_error("failed to create buffer");
@@ -24,7 +25,7 @@ void Buffer::destroy()
 
 void Buffer::writeData(std::span<uint8> data)
 {
-	assert(data.size_bytes() == gpuAllocator.getAllocationInfo(allocation).size);
+	assert(data.size_bytes() <= size);
 
 	// @Review persistent mapped memory ?
 	void* mapped = gpuAllocator.mapMemory(allocation);

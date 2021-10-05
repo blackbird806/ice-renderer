@@ -85,9 +85,10 @@ vk::UniqueRenderPass vkh::createDefaultRenderPass(vkh::DeviceContext& deviceCont
 	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
 }
 
-void vkh::GraphicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv,
+void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> vertSpv,
 		std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples)
 {
+	deviceContext = &ctx;
 	
 	vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
@@ -164,50 +165,31 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<
 
 	ShaderReflector vertReflector(vertSpv);
 	ShaderReflector fragReflector(fragSpv);
-
-	auto const descriptorSetLayoutDataVert = vertReflector.getDescriptorSetLayoutData();
-	auto const descriptorSetLayoutDataFrag = fragReflector.getDescriptorSetLayoutData();
-
-	// @Review descriptor set layouts merge
-	auto const descriptorSetLayoutDatas = { descriptorSetLayoutDataVert, descriptorSetLayoutDataFrag };
-	std::vector<vk::DescriptorSetLayoutBinding> layoutBindings;
-	for (auto const& e : std::ranges::join_view(descriptorSetLayoutDatas))
-	{
-		layoutBindings.insert(layoutBindings.end(), e.bindings.begin(), e.bindings.end());
-	}
 	
-	vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-	descriptorSetLayoutCreateInfo.bindingCount = std::size(layoutBindings);
-	descriptorSetLayoutCreateInfo.pBindings = layoutBindings.data();
-
-	descriptorSetLayouts.push_back(
-		deviceContext.device.createDescriptorSetLayoutUnique(descriptorSetLayoutCreateInfo, deviceContext.allocationCallbacks));
-
+	// @Review dsLayout class may be redundant
+	dsLayout.create(ctx, vertReflector, fragReflector);
+	
 	// Create pipeline layout and render pass.
 
-	std::vector<vk::DescriptorSetLayout> pSetLayouts(descriptorSetLayouts.size());
-	for (int i = 0; auto& layout : pSetLayouts)
-		layout = *descriptorSetLayouts[i++];
-
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.setLayoutCount = std::size(pSetLayouts);
-	pipelineLayoutInfo.pSetLayouts = pSetLayouts.data();
+	pipelineLayoutInfo.setLayoutCount = std::size(dsLayout.descriptorSetLayouts);
+	pipelineLayoutInfo.pSetLayouts = dsLayout.descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	pipelineLayout = deviceContext.device.createPipelineLayoutUnique(pipelineLayoutInfo, deviceContext.allocationCallbacks);
+	pipelineLayout = ctx.device.createPipelineLayoutUnique(pipelineLayoutInfo, ctx.allocationCallbacks);
 
 	vk::ShaderModuleCreateInfo vertexShaderCreateInfo{};
 	vertexShaderCreateInfo.codeSize = vertSpv.size();
 	vertexShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(vertSpv.data());
 
-	vk::UniqueShaderModule vertexShader = deviceContext.device.createShaderModuleUnique(vertexShaderCreateInfo, deviceContext.allocationCallbacks);
+	vk::UniqueShaderModule vertexShader = ctx.device.createShaderModuleUnique(vertexShaderCreateInfo, ctx.allocationCallbacks);
 
 	vk::ShaderModuleCreateInfo fragmentShaderCreateInfo{};
 	fragmentShaderCreateInfo.codeSize = fragSpv.size();
 	fragmentShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(fragSpv.data());
 
-	vk::UniqueShaderModule fragmentShader = deviceContext.device.createShaderModuleUnique(fragmentShaderCreateInfo, deviceContext.allocationCallbacks);
+	vk::UniqueShaderModule fragmentShader = ctx.device.createShaderModuleUnique(fragmentShaderCreateInfo, ctx.allocationCallbacks);
 
 	vk::PipelineShaderStageCreateInfo vertexStageInfo{};
 	vertexStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -251,12 +233,25 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& deviceContext, std::span<
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 
-	pipeline = deviceContext.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, deviceContext.allocationCallbacks);
+	pipeline = ctx.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, ctx.allocationCallbacks);
+}
+
+std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, uint32 count)
+{
+	// @Review
+	std::vector<vk::DescriptorSetLayout> layouts(count, dsLayout.descriptorSetLayouts[0]);
+
+	vk::DescriptorSetAllocateInfo allocInfo{};
+	allocInfo.descriptorPool = pool;
+	allocInfo.descriptorSetCount = count;
+	allocInfo.pSetLayouts = layouts.data();
+
+	return deviceContext->device.allocateDescriptorSets(allocInfo);
 }
 
 void vkh::GraphicsPipeline::destroy()
 {
-	descriptorSetLayouts.clear();
+	dsLayout.destroy();
 	pipelineLayout.reset();
 	pipeline.reset();
 }

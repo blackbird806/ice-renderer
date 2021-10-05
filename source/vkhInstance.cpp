@@ -15,7 +15,7 @@ static VkBool32 debugVkCallback(VkDebugUtilsMessageSeverityFlagBitsEXT  messageS
 	
 	auto const messageTypeStr = vk::to_string(vk::DebugUtilsMessageTypeFlagsEXT(messageType));
 	auto const messageSeverityStr = vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT(messageSeverity));
-	printf("[vulkan debug callback (%s %s) ] : %s\n", messageTypeStr.c_str(), messageSeverityStr.c_str(), callbackData->pMessage);
+	printf("[vulkan debug callback (%s %s) ] : %s\n\n", messageTypeStr.c_str(), messageSeverityStr.c_str(), callbackData->pMessage);
 	return VK_FALSE;
 }
 

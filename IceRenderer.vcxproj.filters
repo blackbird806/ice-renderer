@@ -65,6 +65,33 @@
     <ClCompile Include="source\mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_draw.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_impl_glfw.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_impl_vulkan.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_tables.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_widgets.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\thirdParty\imgui\imgui_demo.cpp">
+      <Filter>thirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="source\vkhDescriptorSetLayout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\ice.hpp">
@@ -107,6 +134,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\mesh.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\vkhDescriptorSetLayout.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Material.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\vkhTexture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -29,8 +29,8 @@ namespace vkh
 			std::vector<vk::DescriptorSetLayoutBinding> bindings;
 		};
 		
-		[[nodiscard]] VertexDescription getVertexDescriptions();
-		[[nodiscard]] std::vector<ShaderReflector::DescriptorSetLayoutData> getDescriptorSetLayoutData();
+		[[nodiscard]] VertexDescription getVertexDescriptions() const; 
+		[[nodiscard]] std::vector<ShaderReflector::DescriptorSetLayoutData> getDescriptorSetLayoutData() const;
 
 	private:
 		SpvReflectShaderModule module;

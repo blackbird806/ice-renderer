@@ -2,6 +2,10 @@
 
 #include <tiny/tiny_obj_loader.h>
 
+
+#include "utility.hpp"
+#include "vkhDeviceContext.hpp"
+
 LoadedMesh loadObj(std::filesystem::path const& objPath)
 {
 	tinyobj::ObjReaderConfig reader_config;
@@ -88,4 +92,60 @@ LoadedMesh loadObj(std::filesystem::path const& objPath)
 		}
 	}
 	return loadedMesh;
+}
+
+Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
+{
+	{
+		vk::BufferCreateInfo vertexBufferInfo;
+		vertexBufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+		vertexBufferInfo.size = mesh.vertices.size() * sizeof(mesh.vertices[0]);
+		vertexBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+		vertexBuffer.create(ctx.gpuAllocator, vertexBufferInfo, allocInfo);
+		vertexBuffer.writeData(toSpan<uint8>(mesh.vertices));
+	}
+	{
+		vk::BufferCreateInfo indexBufferInfo;
+		indexBufferInfo.usage = vk::BufferUsageFlagBits::eIndexBuffer;
+		indexBufferInfo.size = mesh.indices.size() * sizeof(mesh.indices[0]);
+		indexBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+		indexBuffer.create(ctx.gpuAllocator, indexBufferInfo, allocInfo);
+		indexBuffer.writeData(toSpan<uint8>(mesh.indices));
+	}
+	{
+		vk::BufferCreateInfo uniformBufferInfo;
+		uniformBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+		uniformBufferInfo.size = sizeof(ModelBuffer);
+		uniformBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+		uniformBuffer.create(ctx.gpuAllocator, uniformBufferInfo, allocInfo);
+		
+		// @TODO
+		ModelBuffer ubo{};
+		ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		ubo.proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 10.0f);
+		ubo.proj[1][1] *= -1;
+		
+		uniformBuffer.writeStruct(ubo);
+	}
+	
+}
+
+void Mesh::draw(vk::CommandBuffer cmdBuff, uint32 index)
+{
+	vk::DeviceSize offsets[] = { 0 };
+	vk::Buffer vertexBuffers[] = { vertexBuffer.buffer };
+	
+	material.bind(cmdBuff, index);
+	cmdBuff.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+	cmdBuff.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
 }

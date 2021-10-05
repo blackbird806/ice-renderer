@@ -2,6 +2,7 @@
 #include <span>
 
 #include "ice.hpp"
+#include "vkhDescriptorSetLayout.hpp"
 
 namespace vkh
 {
@@ -11,11 +12,13 @@ namespace vkh
 	
 	struct GraphicsPipeline
 	{
-		void create(vkh::DeviceContext& deviceContext, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
+		void create(vkh::DeviceContext& ctx, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
 
+		std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool pool, uint32 count);
 		void destroy();
-
-		std::vector<vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
+		
+		vkh::DeviceContext* deviceContext;
+		vkh::DescriptorSetLayout dsLayout;
 		vk::UniquePipeline pipeline;
 		vk::UniquePipelineLayout pipelineLayout;
 	};
