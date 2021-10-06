@@ -34,6 +34,10 @@ namespace vkh
 			return (VkCommandBuffer)*cmdBuffer;
 		}
 
+		vk::CommandBuffer* operator->()
+		{
+			return &*cmdBuffer;
+		}
 		
 		void end();
 		

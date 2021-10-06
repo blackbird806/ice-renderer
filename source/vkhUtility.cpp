@@ -20,7 +20,6 @@ vk::Format vkh::findSupportedFormat(vk::PhysicalDevice physicalDevice, const std
 	throw std::runtime_error("failed to find supported format");
 }
 
-
 vk::Format vkh::findDepthFormat(vk::PhysicalDevice physicalDevice)
 {
 	return vkh::findSupportedFormat(
@@ -29,3 +28,25 @@ vk::Format vkh::findDepthFormat(vk::PhysicalDevice physicalDevice)
 		vk::ImageTiling::eOptimal,
 		vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 }
+
+bool vkh::hasStencilComponent(vk::Format format) noexcept
+{
+	return format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint;
+}
+
+vk::SampleCountFlagBits vkh::getMaxUsableSampleCount(vk::PhysicalDevice physicalDevice)
+{
+	vk::PhysicalDeviceProperties const physicalDeviceProperties = physicalDevice.getProperties();
+
+	vk::SampleCountFlags const counts = physicalDeviceProperties.limits.framebufferColorSampleCounts & physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+
+	if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
+	if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
+	if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
+	if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
+	if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
+	if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
+
+	return vk::SampleCountFlagBits::e1;
+}
+

@@ -45,6 +45,7 @@
     <ClCompile Include="source\vkhInstance.cpp" />
     <ClCompile Include="source\vkhShader.cpp" />
     <ClCompile Include="source\vkhSwapchain.cpp" />
+    <ClCompile Include="source\vkhTexture.cpp" />
     <ClCompile Include="source\vkhUtility.cpp" />
     <ClCompile Include="source\vma.cpp" />
     <ClCompile Include="source\vulkanContext.cpp" />

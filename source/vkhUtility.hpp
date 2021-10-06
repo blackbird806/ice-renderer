@@ -7,4 +7,8 @@ namespace vkh
 
 	vk::Format findDepthFormat(vk::PhysicalDevice physicalDevice);
 
+	bool hasStencilComponent(vk::Format format) noexcept;
+
+	vk::SampleCountFlagBits getMaxUsableSampleCount(vk::PhysicalDevice physicalDevice);
+	
 }
