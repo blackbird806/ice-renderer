@@ -34,12 +34,6 @@ struct VulkanContext
 	void createSyncResources();
 	void createDescriptorPool();
 
-	void createFrameConstantBuffers();
-	void destroyFrameConstantBuffers();
-	void createFrameConstantDescriptorSets();
-	void setFrameConstantDescriptorSetsBuffers();
-	void destroyFrameConstantDescriptorSets();
-
 	void destroyDepthResources();
 	void destroyMsResources();
 	void destroyFrameBuffers();
@@ -79,9 +73,6 @@ struct VulkanContext
 	vkh::Image depthImage;
 	vk::UniqueImageView depthImageView;
 
-	std::vector<vkh::Buffer> frameConstantBuffers;
-	std::vector<vk::UniqueDescriptorSet> frameConstantsDescriptorSets;
-	
 	GLFWwindow* window;
 	vk::SurfaceKHR surface;
 };

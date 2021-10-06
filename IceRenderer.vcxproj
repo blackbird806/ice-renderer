@@ -23,8 +23,9 @@
     <ClCompile Include="source\GUILayer.cpp" />
     <ClCompile Include="source\imguiThemes.cpp" />
     <ClCompile Include="source\main.cpp" />
-    <ClCompile Include="source\Material.cpp" />
+    <ClCompile Include="source\material.cpp" />
     <ClCompile Include="source\mesh.cpp" />
+    <ClCompile Include="source\pipelineBatch.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui_draw.cpp" />
@@ -53,7 +54,8 @@
     <ClInclude Include="source\engine.hpp" />
     <ClInclude Include="source\GUILayer.hpp" />
     <ClInclude Include="source\mesh.hpp" />
-    <ClInclude Include="source\Material.hpp" />
+    <ClInclude Include="source\material.hpp" />
+    <ClInclude Include="source\pipelineBatch.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
     <ClInclude Include="source\vkhDescriptorSetLayout.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />

@@ -2,7 +2,21 @@
 
 using namespace vkh;
 
-void Buffer::create(vma::Allocator gpuAlloc, vk::BufferCreateInfo bufferInfo, vma::AllocationCreateInfo allocInfo)
+Buffer::Buffer(Buffer&& rhs) noexcept :
+	buffer(rhs.buffer)
+{
+	rhs.buffer = vk::Buffer();
+}
+
+Buffer& Buffer::operator=(Buffer&& rhs) noexcept
+{
+	buffer = rhs.buffer;
+	rhs.buffer = vk::Buffer();
+	return *this;
+}
+
+// @TODO handle buffer creation with staging buffer
+void Buffer::create(vma::Allocator gpuAlloc, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo)
 {
 	gpuAllocator = gpuAlloc;
 	

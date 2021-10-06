@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vulkan/vulkan.hpp>
 #include <span>
 
@@ -14,7 +16,7 @@ namespace vkh
 	{
 		void create(vkh::DeviceContext& ctx, std::span<uint8> vertSpv, std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples);
 
-		std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool pool, uint32 count);
+		std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetLayout::SetIndex setIndex, uint32 count);
 		void destroy();
 		
 		vkh::DeviceContext* deviceContext;

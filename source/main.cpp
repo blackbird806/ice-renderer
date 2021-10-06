@@ -29,7 +29,8 @@ int main()
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
 	mesh.material.graphicsPipeline = &context.defaultPipeline;
-	mesh.material.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, context.maxFramesInFlight);
+	mesh.material.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, 
+		vkh::DescriptorSetLayout::SetIndex::FrameConstants, context.maxFramesInFlight);
 	mesh.material.setBuffer(mesh.uniformBuffer);
 	mesh.material.updateDescriptorSets();
 	

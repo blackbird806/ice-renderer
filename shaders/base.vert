@@ -9,12 +9,12 @@
 
 // updated once per Material "bucket"
 // layout(set = 1, binding = 0) uniform material {
-//     sampler texture;
+//     int textureId;
 //     float shiniess;
 //     ...
 // };
 
-// updated once per model
+// updated once per drawcall
 // layout(set = 2, binding = 0) uniform model {
 //     mat4 model;
 // };

@@ -186,67 +186,6 @@ void VulkanContext::createDescriptorPool()
 	descriptorPool = deviceContext.device.createDescriptorPoolUnique(poolInfo, deviceContext.allocationCallbacks);
 }
 
-void VulkanContext::createFrameConstantBuffers()
-{
-	frameConstantBuffers.resize(maxFramesInFlight);
-	for (uint i = 0; i < maxFramesInFlight; i++)
-	{
-		vk::BufferCreateInfo bufferInfo;
-		bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-		bufferInfo.size = sizeof(UniformFrameConstants);
-		bufferInfo.sharingMode = vk::SharingMode::eExclusive;
-
-		// @TODO
-		vma::AllocationCreateInfo allocInfo;
-		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		frameConstantBuffers[i].create(deviceContext.gpuAllocator, bufferInfo, allocInfo);
-	}
-}
-
-void VulkanContext::destroyFrameConstantBuffers()
-{
-	frameConstantBuffers.clear();
-}
-
-void VulkanContext::createFrameConstantDescriptorSets()
-{
-	std::vector<vk::DescriptorSetLayout> layouts(maxFramesInFlight);
-
-	vk::DescriptorSetAllocateInfo allocInfo{};
-	allocInfo.descriptorPool = *descriptorPool;
-	allocInfo.descriptorSetCount = maxFramesInFlight;
-	allocInfo.pSetLayouts = layouts.data();
-
-	frameConstantsDescriptorSets = deviceContext.device.allocateDescriptorSetsUnique(allocInfo);
-}
-
-void VulkanContext::setFrameConstantDescriptorSetsBuffers()
-{
-	std::vector<vk::WriteDescriptorSet> descriptorsWriteInfos(maxFramesInFlight);
-	for (uint i = 0; i < maxFramesInFlight; i++)
-	{
-		vk::DescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = frameConstantBuffers[i].buffer;
-		bufferInfo.offset = 0;
-		bufferInfo.range = frameConstantBuffers[i].size;
-
-		descriptorsWriteInfos[i].dstSet = *frameConstantsDescriptorSets[i];
-		descriptorsWriteInfos[i].dstBinding = 0;
-		descriptorsWriteInfos[i].dstArrayElement = 0;
-		descriptorsWriteInfos[i].descriptorType = vk::DescriptorType::eUniformBuffer;
-		descriptorsWriteInfos[i].descriptorCount = 1;
-		descriptorsWriteInfos[i].pBufferInfo = &bufferInfo;
-	}
-
-	deviceContext.device.updateDescriptorSets(
-		std::size(descriptorsWriteInfos), descriptorsWriteInfos.data(), 0, nullptr);
-}
-
-void VulkanContext::destroyFrameConstantDescriptorSets()
-{
-	frameConstantsDescriptorSets.clear();
-}
-
 void VulkanContext::destroyDepthResources()
 {
 	depthImage.destroy();

@@ -15,9 +15,13 @@ namespace vkh
 	public:
 
 		Buffer() = default;
-		ICE_NON_DISPATCHABLE_CLASS(Buffer)
+		Buffer(Buffer&&) noexcept;
+
+		Buffer& operator=(Buffer&&) noexcept;
 		
-		void create(vma::Allocator gpuAlloc, vk::BufferCreateInfo bufferInfo, vma::AllocationCreateInfo allocInfo);
+		ICE_NON_COPYABLE_CLASS(Buffer)
+		
+		void create(vma::Allocator gpuAlloc, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo);
 		
 		void destroy();
 

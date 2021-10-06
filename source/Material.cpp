@@ -1,4 +1,4 @@
-#include "Material.hpp"
+#include "material.hpp"
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
 #include "vkhDeviceContext.hpp"
@@ -8,7 +8,7 @@ void Material::setBuffer(vkh::Buffer const& buffer)
 	vk::DescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = buffer.buffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = buffer.size;
+	bufferInfo.range = VK_WHOLE_SIZE;
 
 	for (auto const& set : descriptorSets)
 	{

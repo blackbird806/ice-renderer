@@ -65,7 +65,6 @@ void VulkanContextLegacy::loadModel()
 	std::vector<tinyobj::material_t> materials;
 	std::string warn, err;
 	
-	// TODO use obj v2 API
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "assets/viking_room.obj")) {
 		throw std::runtime_error(warn + err);
 	}
@@ -372,7 +371,7 @@ void VulkanContextLegacy::createInstance(std::span<const char*> validationLayers
 		features.enabledValidationFeatureCount = std::size(enables);
 		features.pEnabledValidationFeatures = enables;
 		debugCreateInfo.pNext = &features;
-		createInfo.pNext = &debugCreateInfo; // @TODO
+		createInfo.pNext = &debugCreateInfo;
 	}
 #else
 	{
@@ -409,7 +408,6 @@ static auto findQueue(
 
 void VulkanContextLegacy::createDevice(std::span<const char*> requiredExtensions)
 {
-	// TODO choose real device
 	physicalDevice = physicalDevices[0];
 	msaaSamples = getMaxUsableSampleCount(physicalDevice);
 	
@@ -805,7 +803,6 @@ void VulkanContextLegacy::createGraphicsPipeline()
 
 	// Load shaders
 
-	// TODO use shader compiler lib
 	std::system("cd .\\shaders && shadercompile.bat");
 
 	auto vertCode = readBinFile("shaders/vert.spv");

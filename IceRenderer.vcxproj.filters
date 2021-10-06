@@ -89,7 +89,7 @@
     <ClCompile Include="source\vkhDescriptorSetLayout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Material.cpp">
+    <ClCompile Include="source\material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\GUILayer.cpp">
@@ -99,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\imguiThemes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\pipelineBatch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -148,7 +151,7 @@
     <ClInclude Include="source\vkhDescriptorSetLayout.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Material.hpp">
+    <ClInclude Include="source\material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\vkhTexture.hpp">
@@ -158,6 +161,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\engine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\pipelineBatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -12,6 +12,7 @@ namespace vkh
 		enum SetIndex : size_t
 		{
 			FrameConstants = 0,
+			Textures,
 			Material,
 			DrawCall,
 

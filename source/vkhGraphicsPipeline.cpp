@@ -234,10 +234,12 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	pipeline = ctx.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, ctx.allocationCallbacks);
 }
 
-std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, uint32 count)
+std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetLayout::SetIndex setIndex, uint32 count)
 {
-	// @Review
-	std::vector<vk::DescriptorSetLayout> layouts(count, dsLayout.descriptorSetLayouts[0]);
+	assert(setIndex < DescriptorSetLayout::MaxSets);
+	assert(count > 0);
+
+	std::vector<vk::DescriptorSetLayout> layouts(count, dsLayout.descriptorSetLayouts[setIndex]);
 
 	vk::DescriptorSetAllocateInfo allocInfo{};
 	allocInfo.descriptorPool = pool;
