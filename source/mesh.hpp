@@ -9,7 +9,7 @@
 #include <vkhBuffer.hpp>
 #include <vkhCommandBuffers.hpp>
 
-#include "Material.hpp"
+#include "renderObject.hpp"
 
 namespace vkh {
 	struct DeviceContext;
@@ -56,7 +56,7 @@ namespace std {
 
 LoadedMesh loadObj(std::filesystem::path const& objPath);
 
-class Mesh
+class Mesh : RenderObject
 {
 public:
 	Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh);
@@ -65,7 +65,6 @@ public:
 
 	size_t indicesCount;
 	
-	Material material;
 	vkh::Buffer vertexBuffer;
 	vkh::Buffer indexBuffer;
 	vkh::Buffer uniformBuffer;

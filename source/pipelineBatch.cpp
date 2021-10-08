@@ -6,7 +6,7 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, uint32 bufferCount)
 	pipeline = &pipeline_;
 
 	createDescriptorPool(bufferCount);
-	pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::FrameConstants, bufferCount);
+	pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::PipelineConstants, bufferCount);
 	pipelineMaterialsSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::Material, bufferCount);
 	pipelineTexturesSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::Textures, bufferCount);
 
@@ -15,7 +15,8 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, uint32 bufferCount)
 	vk::BufferCreateInfo pipelineConstantBufferInfo;
 	pipelineConstantBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 	// @TODO
-	//pipelineConstantBufferInfo.size = dsLayoutSize;
+	// @Review alignement
+	//pipelineConstantBufferInfo.size = 
 	pipelineConstantBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 	// @TODO
@@ -54,15 +55,9 @@ void PipelineBatch::destroyDescriptorPool()
 	descriptorPool.reset();
 }
 
-void PipelineBatch::bind(vk::CommandBuffer cmdBuff, uint32 frameIndex)
+void PipelineBatch::bindMaterial(vk::CommandBuffer cmdBuff, MaterialID_t matId, uint32 frameIndex)
 {
-	cmdBuff.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline->pipeline);
-	cmdBuff.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipelineLayout, 0, 1, &pipelineConstantSets[frameIndex], 0, nullptr);
-	for (uint32 i = 0; auto const& mtrl : materials)
-	{
-		// @TODO
-		uint32 materialOffset = i; // * sizeof(MaterialBuffer)
-		cmdBuff.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipelineLayout, 0, 1, &pipelineMaterialsSets[frameIndex], 0, &materialOffset);
-		i++;
-	}
+	uint32 dynamicOffsets[] = { matId /* * sizeof(Material) */};
+	cmdBuff.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline->pipelineLayout, 
+		0, 1, &pipelineMaterialsSets[frameIndex], 1, dynamicOffsets);
 }

@@ -57,6 +57,7 @@
     <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\material.hpp" />
     <ClInclude Include="source\pipelineBatch.hpp" />
+    <ClInclude Include="source\renderObject.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
     <ClInclude Include="source\vkhDescriptorSetLayout.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />

@@ -1,11 +1,12 @@
 #include "vkhShader.hpp"
 
-#include <iostream>
 #include <SPIRV-Reflect/spirv_reflect.h>
 
 #include "vkhDeviceContext.hpp"
 
 using namespace vkh;
+
+// @Improve use SPVRflect C++ API
 
 ShaderReflector::ShaderReflector(std::span<uint8 const> spvCode)
 {
@@ -16,6 +17,13 @@ ShaderReflector::ShaderReflector(std::span<uint8 const> spvCode)
 ShaderReflector::~ShaderReflector()
 {
 	spvReflectDestroyShaderModule(&module);
+}
+
+size_t ShaderReflector::DescriptorSetDescriptor::Struct::getSize() const
+{
+	size_t sum = 0;
+	// @TODO
+	return sum;
 }
 
 // Returns the size in bytes of the provided VkFormat.
@@ -155,6 +163,8 @@ static uint32_t formatSize(VkFormat format)
 	return result;
 }
 
+//@TODO precompute shader reflexion
+
 // https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_io_variables.cpp
 ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions() const
 {
@@ -207,13 +217,7 @@ ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions() cons
 // TODO get push constants
 std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescriptorSetLayoutData() const
 {
-	uint32_t count = 0;
-	SpvReflectResult result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
-	assert(result == SPV_REFLECT_RESULT_SUCCESS);
-
-	std::vector<SpvReflectDescriptorSet*> sets(count);
-	result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
-	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+	auto sets = reflectDescriptorSets();
 
 	std::vector<DescriptorSetLayoutData> set_layouts(sets.size());
 	
@@ -241,5 +245,138 @@ std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescri
 		layout.create_info.pBindings = layout.bindings.data();
 	}
 	return set_layouts;
+}
+
+std::vector<SpvReflectDescriptorSet*> ShaderReflector::reflectDescriptorSets() const
+{
+	uint32_t count = 0;
+	SpvReflectResult result = spvReflectEnumerateDescriptorSets(&module, &count, nullptr);
+	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+	std::vector<SpvReflectDescriptorSet*> sets(count);
+	result = spvReflectEnumerateDescriptorSets(&module, &count, sets.data());
+	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+	return sets;
+}
+
+// @Improve only float are supported for now
+static ShaderReflector::DescriptorSetDescriptor::Member reflectMember(SpvReflectTypeDescription const& typeDescription)
+{
+	ShaderReflector::DescriptorSetDescriptor::Member mem;
+	if (typeDescription.struct_member_name != nullptr)
+		mem.name = typeDescription.struct_member_name;
+	mem.typeFlags = typeDescription.type_flags;
+
+	auto const& traits = typeDescription.traits;
+	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+	{
+		mem.arrayTraits = traits.array;
+	}
+	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_MATRIX)
+	{
+#define ROW_CASE_CASE(COLUMN_DIM, ROW_DIM) case ROW_DIM: mem.value = glm::mat##COLUMN_DIM##x##ROW_DIM##(); break;
+#define ROW_CASE(COLUMN_DIM) case COLUMN_DIM: switch(traits.numeric.matrix.row_count) { \
+		ROW_CASE_CASE(COLUMN_DIM, 2) \
+		ROW_CASE_CASE(COLUMN_DIM, 3) \
+		ROW_CASE_CASE(COLUMN_DIM, 4) \
+			default:\
+		throw std::runtime_error("unsuported vector dimension");\
+		} break;
+		
+		switch(traits.numeric.matrix.column_count)
+		{
+			ROW_CASE(2)
+			ROW_CASE(3)
+			ROW_CASE(4)
+		default:
+				throw std::runtime_error("unsuported vector dimension");
+		}
+#undef ROW_CASE_CASE
+#undef ROW_CASE
+	}
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_VECTOR)
+	{
+#define COMPONENT_CASE(DIM) case DIM: mem.value = glm::vec##DIM##();break;
+		switch (traits.numeric.vector.component_count)
+		{
+			COMPONENT_CASE(1)
+			COMPONENT_CASE(2)
+			COMPONENT_CASE(3)
+			COMPONENT_CASE(4)
+		default:
+			throw std::runtime_error("unsuported vector dimension");
+		}
+#undef COMPONENT_CASE;
+	}
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_FLOAT)
+	{
+		if (traits.numeric.scalar.width == 32)
+			mem.value = float(0);
+		else if (traits.numeric.scalar.width == 64)
+			mem.value = double(0);
+		else
+			throw std::runtime_error("unsuported float width");
+	}
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_BOOL)
+		mem.value = false;
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_INT)
+	{
+#define CASE_WIDTH(W) case W: mem.value =  traits.numeric.scalar.signedness > 0 ? int##W##(0) : uint##W##(0); break;
+		switch (traits.numeric.scalar.width)
+		{
+			CASE_WIDTH(8)
+			CASE_WIDTH(16)
+			CASE_WIDTH(32)
+			CASE_WIDTH(64)
+		default:
+			throw std::runtime_error("unsuported int width");
+		}
+#undef CASE_WIDTH
+	}
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT)
+	{
+		// @Review ugly code right here
+		ShaderReflector::DescriptorSetDescriptor::Struct struct_;
+		for (int j_member = 0; j_member < typeDescription.member_count; j_member++)
+		{
+			struct_.members.emplace_back(reflectMember(typeDescription.members[j_member]));
+		}
+		mem.value = std::move(struct_);
+	}
+	else
+		throw std::runtime_error("unsuported type");
+	
+	return mem;
+}
+
+static ShaderReflector::DescriptorSetDescriptor::Binding reflectDescriptorBinding(SpvReflectDescriptorBinding const& reflBinding)
+{
+	ShaderReflector::DescriptorSetDescriptor::Binding binding;
+	binding.descriptorType = reflBinding.descriptor_type;
+	binding.element = reflectMember(*reflBinding.type_description);
+	if (!std::holds_alternative<ShaderReflector::DescriptorSetDescriptor::Struct>(binding.element.value))
+		binding.element.name = reflBinding.name;
+	return binding;
+}
+
+std::vector<ShaderReflector::DescriptorSetDescriptor> ShaderReflector::createDescriptorSetDescriptors() const
+{
+	std::vector<DescriptorSetDescriptor> descriptors;
+	auto const sets = reflectDescriptorSets();
+	for (uint setNum = 0; auto const& set : sets)
+	{
+		ShaderReflector::DescriptorSetDescriptor desc;
+		for (uint32_t i_binding = 0; i_binding < set->binding_count; ++i_binding)
+		{
+			const SpvReflectDescriptorBinding& refl_binding = *(set->bindings[i_binding]);
+			desc.bindings.push_back(reflectDescriptorBinding(refl_binding));
+		}
+		desc.setNumber = setNum;
+		descriptors.push_back(std::move(desc));
+		setNum++;
+	}
+	
+	return descriptors;
 }
 

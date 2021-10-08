@@ -11,3 +11,9 @@ std::span<To> toSpan(std::vector<From> const& vec)
 {
 	return std::span((To*)vec.data(), vec.size() * sizeof(vec[0]));
 }
+
+template<typename T>
+void mergeVectors(std::vector<T>& a, std::vector<T> const& b)
+{
+	a.insert(a.end(), b.begin(), b.end());
+}

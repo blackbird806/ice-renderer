@@ -214,6 +214,7 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	// Create graphic pipeline
+	// @TODO handle variable shader stages
 	vk::GraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.stageCount = 2;
 	pipelineInfo.pStages = shaderStages;

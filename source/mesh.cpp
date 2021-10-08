@@ -146,7 +146,6 @@ void Mesh::draw(vk::CommandBuffer cmdBuff, uint32 index)
 	vk::DeviceSize offsets[] = { 0 };
 	vk::Buffer vertexBuffers[] = { vertexBuffer.buffer };
 	
-	material.bind(cmdBuff, index);
 	cmdBuff.bindVertexBuffers(0, 1, vertexBuffers, offsets);
 	cmdBuff.bindIndexBuffer(indexBuffer.buffer, 0, vk::IndexType::eUint32);
 	cmdBuff.drawIndexed(indicesCount, 1, 0, 0, 0);

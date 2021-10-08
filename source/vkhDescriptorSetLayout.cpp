@@ -4,6 +4,7 @@
 #include "vkhShader.hpp"
 
 #include <ranges>
+#include <utility.hpp>
 
 using namespace vkh;
 
@@ -11,6 +12,8 @@ void DescriptorSetLayout::create(vkh::DeviceContext& ctx, ShaderReflector const&
 	ShaderReflector const& fragData)
 {
 	deviceContext = &ctx;
+
+	auto a = fragData.createDescriptorSetDescriptors();
 	
 	auto const descriptorSetLayoutDatas = { vertData.getDescriptorSetLayoutData(), fragData.getDescriptorSetLayoutData() };
 	
@@ -18,7 +21,7 @@ void DescriptorSetLayout::create(vkh::DeviceContext& ctx, ShaderReflector const&
 	{
 		assert(e.set_number < MaxSets);
 		
-		layoutBindings[e.set_number].insert(layoutBindings[e.set_number].end(), e.bindings.begin(), e.bindings.end());
+		mergeVectors(layoutBindings[e.set_number], e.bindings);
 	}
 
 	for (size_t i = 0; i < MaxSets; i++)
@@ -30,6 +33,9 @@ void DescriptorSetLayout::create(vkh::DeviceContext& ctx, ShaderReflector const&
 		descriptorSetLayouts.push_back(
 			ctx.device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo, ctx.allocationCallbacks));
 	}
+	
+	descriptorsDescriptors = vertData.createDescriptorSetDescriptors();
+	mergeVectors(descriptorsDescriptors, fragData.createDescriptorSetDescriptors());
 }
 
 void DescriptorSetLayout::destroy()

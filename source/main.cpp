@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "vulkanContext.hpp"
+#include "pipelineBatch.hpp"
 #include "mesh.hpp"
 #include "GUILayer.hpp"
 
@@ -28,11 +29,9 @@ int main()
 	};
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
-	mesh.material.graphicsPipeline = &context.defaultPipeline;
-	mesh.material.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, 
-		vkh::DescriptorSetLayout::SetIndex::FrameConstants, context.maxFramesInFlight);
-	mesh.material.setBuffer(mesh.uniformBuffer);
-	mesh.material.updateDescriptorSets();
+
+	PipelineBatch pipelineBatch;
+	pipelineBatch.create(context.defaultPipeline, context.maxFramesInFlight);
 	
 	while (!glfwWindowShouldClose(window))
 	{

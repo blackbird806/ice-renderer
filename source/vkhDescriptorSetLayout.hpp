@@ -1,17 +1,17 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include "vkhShader.hpp"
 
 namespace vkh
 {
-	class ShaderReflector;
 	struct DeviceContext;
 
 	struct DescriptorSetLayout
 	{
 		enum SetIndex : size_t
 		{
-			FrameConstants = 0,
+			PipelineConstants = 0,
 			Textures,
 			Material,
 			DrawCall,
@@ -24,6 +24,8 @@ namespace vkh
 		void create(vkh::DeviceContext& ctx, ShaderReflector const& vertData, ShaderReflector const& fragData);
 
 		void destroy();
+
+		std::vector<ShaderReflector::DescriptorSetDescriptor> descriptorsDescriptors;
 		
 		LayoutBindings_t layoutBindings;
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
