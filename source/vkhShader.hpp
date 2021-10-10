@@ -17,7 +17,8 @@ namespace vkh
 	{
 	public:
 
-		ShaderReflector(std::span<uint8 const> spvCode);
+		void create(std::span<uint8 const> spvCode);
+		void destroy();
 		~ShaderReflector();
 
 		struct DescriptorSetDescriptor
@@ -48,6 +49,8 @@ namespace vkh
 					Sampler1D, Sampler2D, Sampler3D,
 					Struct
 				>;
+
+				size_t getSize() const;
 				
 				std::string name;
 				SpvReflectTypeFlags typeFlags = 0;
@@ -90,4 +93,16 @@ namespace vkh
 		SpvReflectShaderModule module;
 	};
 
+	struct ShaderModule
+	{
+		void create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shaderStage, std::span<uint8> data);
+		void destroy();
+
+		vk::PipelineShaderStageCreateInfo getPipelineShaderStage() const;
+
+		vk::UniqueShaderModule module;
+		ShaderReflector reflector;
+		vk::ShaderStageFlagBits shaderStage;
+	};
+	
 }

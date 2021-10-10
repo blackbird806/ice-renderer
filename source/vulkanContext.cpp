@@ -19,12 +19,25 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 
 	std::system("cd .\\shaders && shadercompile.bat");
 
-	auto const vertSpv = readBinFile("shaders/vert.spv");
 	auto const fragSpv = readBinFile("shaders/frag.spv");
-
+	vkh::ShaderModule fragmentShader;
+	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eFragment, toSpan<uint8>(fragSpv));
+	auto const vertSpv = readBinFile("shaders/vert.spv");
+	
+	vkh::ShaderModule vertexShader;
+	vertexShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
+	
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
-	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
+		.vertexShader = std::move(vertexShader),
+		.fragmentShader = std::move(fragmentShader),
+		.renderPass = *defaultRenderPass,
+		.msaaSamples = msaaSamples
+	};
+	
+	defaultPipeline.create(deviceContext, pipelineInfo);
 	createMsResources();
 	createDepthResources();
 	createFramebuffers();
@@ -216,13 +229,26 @@ void VulkanContext::recreateSwapchain()
 	swapchain.destroy();
 	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
 
-	auto const vertSpv = readBinFile("shaders/vert.spv");
-	auto const fragSpv = readBinFile("shaders/frag.spv");
-
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
 	defaultPipeline.destroy();
-	defaultPipeline.create(deviceContext, toSpan<uint8>(vertSpv), toSpan<uint8>(fragSpv), *defaultRenderPass, swapchain.extent, msaaSamples);
+
+	auto const fragSpv = readBinFile("shaders/frag.spv");
+	vkh::ShaderModule fragmentShader;
+	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eFragment, toSpan<uint8>(fragSpv));
+
+	auto const vertSpv = readBinFile("shaders/vert.spv");
+	vkh::ShaderModule vertexShader;
+	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
+
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
+		.vertexShader = std::move(vertexShader),
+		.fragmentShader = std::move(fragmentShader),
+		.renderPass = *defaultRenderPass,
+		.msaaSamples = msaaSamples
+	};
+
+	defaultPipeline.create(deviceContext, pipelineInfo);
 
 	destroyMsResources();
 	createMsResources();

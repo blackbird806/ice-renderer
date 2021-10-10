@@ -83,8 +83,7 @@ vk::UniqueRenderPass vkh::createDefaultRenderPassMSAA(vkh::DeviceContext& device
 	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
 }
 
-void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> vertSpv,
-		std::span<uint8> fragSpv, vk::RenderPass renderPass, vk::Extent2D imageExtent, vk::SampleCountFlagBits msaaSamples)
+void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& info)
 {
 	deviceContext = &ctx;
 	
@@ -95,14 +94,14 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	vk::Viewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(imageExtent.width);
-	viewport.height = static_cast<float>(imageExtent.height);
+	viewport.width = static_cast<float>(info.imageExtent.width);
+	viewport.height = static_cast<float>(info.imageExtent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	vk::Rect2D scissor = {};
 	scissor.offset = vk::Offset2D{ 0, 0 };
-	scissor.extent = imageExtent;
+	scissor.extent = info.imageExtent;
 
 	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.viewportCount = 1;
@@ -124,7 +123,7 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 
 	vk::PipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = msaaSamples;
+	multisampling.rasterizationSamples = info.msaaSamples;
 	multisampling.minSampleShading = 1.0f; // Optional
 	multisampling.pSampleMask = nullptr; // Optional
 	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
@@ -159,53 +158,32 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
-	// Create descriptor pool/sets.
-
-	ShaderReflector vertReflector(vertSpv);
-	ShaderReflector fragReflector(fragSpv);
+	// @Review abstract pipeline layout + vertexInput (aka shader reflect infos) ?
 	
-	// @Review dsLayout class may be redundant
-	dsLayout.create(ctx, vertReflector, fragReflector);
+	vertexShaderDsLayout.create(ctx, info.vertexShader.reflector);
+	fragmentShaderDsLayout.create(ctx, info.fragmentShader.reflector);
+
+	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+	descriptorSetLayouts.reserve(fragmentShaderDsLayout.descriptorSetLayouts.size() + vertexShaderDsLayout.descriptorSetLayouts.size());
+
+	for (auto const& [_, d] : vertexShaderDsLayout.descriptorSetLayouts)
+		descriptorSetLayouts.push_back(*d);
+
+	for (auto const& [_, d] : fragmentShaderDsLayout.descriptorSetLayouts)
+		descriptorSetLayouts.push_back(*d);
 	
 	// Create pipeline layout and render pass.
-
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.setLayoutCount = std::size(dsLayout.descriptorSetLayouts);
-	pipelineLayoutInfo.pSetLayouts = dsLayout.descriptorSetLayouts.data();
+	pipelineLayoutInfo.setLayoutCount = std::size(descriptorSetLayouts);
+	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	pipelineLayout = ctx.device.createPipelineLayoutUnique(pipelineLayoutInfo, ctx.allocationCallbacks);
+	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(2);
+	shaderStages[0] = info.vertexShader.getPipelineShaderStage();
+	shaderStages[1] = info.fragmentShader.getPipelineShaderStage();
 
-	vk::ShaderModuleCreateInfo vertexShaderCreateInfo{};
-	vertexShaderCreateInfo.codeSize = vertSpv.size();
-	vertexShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(vertSpv.data());
-
-	vk::UniqueShaderModule vertexShader = ctx.device.createShaderModuleUnique(vertexShaderCreateInfo, ctx.allocationCallbacks);
-
-	vk::ShaderModuleCreateInfo fragmentShaderCreateInfo{};
-	fragmentShaderCreateInfo.codeSize = fragSpv.size();
-	fragmentShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(fragSpv.data());
-
-	vk::UniqueShaderModule fragmentShader = ctx.device.createShaderModuleUnique(fragmentShaderCreateInfo, ctx.allocationCallbacks);
-
-	vk::PipelineShaderStageCreateInfo vertexStageInfo{};
-	vertexStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
-	vertexStageInfo.module = vertexShader.get();
-	vertexStageInfo.pName = "main";
-
-	vk::PipelineShaderStageCreateInfo fragmentStageInfo{};
-	fragmentStageInfo.stage = vk::ShaderStageFlagBits::eFragment;
-	fragmentStageInfo.module = fragmentShader.get();
-	fragmentStageInfo.pName = "main";
-
-	vk::PipelineShaderStageCreateInfo shaderStages[] =
-	{
-		vertexStageInfo,
-		fragmentStageInfo
-	};
-
-	auto [attributeDescriptions, bindingDescription] = vertReflector.getVertexDescriptions();
+	auto [attributeDescriptions, bindingDescription] = info.vertexShader.reflector.getVertexDescriptions();
 
 	vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -214,10 +192,9 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	// Create graphic pipeline
-	// @TODO handle variable shader stages
 	vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.stageCount = std::size(shaderStages);
+	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
@@ -229,18 +206,25 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, std::span<uint8> ver
 	pipelineInfo.basePipelineHandle = nullptr; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 	pipelineInfo.layout = *pipelineLayout;
-	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.renderPass = info.renderPass;
 	pipelineInfo.subpass = 0;
 
 	pipeline = ctx.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, ctx.allocationCallbacks);
 }
 
-std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetLayout::SetIndex setIndex, uint32 count)
+std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vk::ShaderStageFlagBits shaderStage, vkh::DescriptorSetIndex setIndex, uint32 count)
 {
-	assert(setIndex < DescriptorSetLayout::MaxSets);
+	assert(setIndex < MaxSets);
 	assert(count > 0);
+	assert(shaderStage == vk::ShaderStageFlagBits::eVertex || shaderStage == vk::ShaderStageFlagBits::eFragment);
 
-	std::vector<vk::DescriptorSetLayout> layouts(count, dsLayout.descriptorSetLayouts[setIndex]);
+	vk::DescriptorSetLayout layout;
+	if (shaderStage == vk::ShaderStageFlagBits::eVertex)
+		layout = *vertexShaderDsLayout.descriptorSetLayouts[setIndex];
+	else if (shaderStage == vk::ShaderStageFlagBits::eFragment)
+		layout = *fragmentShaderDsLayout.descriptorSetLayouts[setIndex];
+
+	std::vector<vk::DescriptorSetLayout> layouts(count, layout);
 
 	vk::DescriptorSetAllocateInfo allocInfo{};
 	allocInfo.descriptorPool = pool;
@@ -252,7 +236,8 @@ std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::D
 
 void vkh::GraphicsPipeline::destroy()
 {
-	dsLayout.destroy();
+	vertexShaderDsLayout.destroy();
+	fragmentShaderDsLayout.destroy();
 	pipelineLayout.reset();
 	pipeline.reset();
 }

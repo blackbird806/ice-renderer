@@ -2,28 +2,51 @@
 
 #include <SPIRV-Reflect/spirv_reflect.h>
 
+
+#include "utility.hpp"
 #include "vkhDeviceContext.hpp"
 
 using namespace vkh;
 
 // @Improve use SPVRflect C++ API
 
-ShaderReflector::ShaderReflector(std::span<uint8 const> spvCode)
+void ShaderReflector::create(std::span<uint8 const> spvCode)
 {
 	SpvReflectResult result = spvReflectCreateShaderModule(spvCode.size_bytes(), spvCode.data(), &module);
 	assert(result == SPV_REFLECT_RESULT_SUCCESS);
 }
 
-ShaderReflector::~ShaderReflector()
+void ShaderReflector::destroy()
 {
 	spvReflectDestroyShaderModule(&module);
+}
+
+ShaderReflector::~ShaderReflector()
+{
+	destroy();
 }
 
 size_t ShaderReflector::DescriptorSetDescriptor::Struct::getSize() const
 {
 	size_t sum = 0;
-	// @TODO
+	for (auto const& member : members)
+		sum += member.getSize();
 	return sum;
+}
+
+size_t ShaderReflector::DescriptorSetDescriptor::Member::getSize() const
+{
+	return std::visit(overloaded{
+	[](auto&& e)
+	{
+		return sizeof(e);
+	},
+	[] (Struct const& s)
+	{
+		return s.getSize();
+	}
+	}, value);
+	return 0;
 }
 
 // Returns the size in bytes of the provided VkFormat.
@@ -372,11 +395,37 @@ std::vector<ShaderReflector::DescriptorSetDescriptor> ShaderReflector::createDes
 			const SpvReflectDescriptorBinding& refl_binding = *(set->bindings[i_binding]);
 			desc.bindings.push_back(reflectDescriptorBinding(refl_binding));
 		}
-		desc.setNumber = setNum;
+		desc.setNumber = set->set;
 		descriptors.push_back(std::move(desc));
 		setNum++;
 	}
 	
 	return descriptors;
+}
+
+void ShaderModule::create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shaderStage_, std::span<uint8> data)
+{
+	vk::ShaderModuleCreateInfo fragmentShaderCreateInfo{};
+	fragmentShaderCreateInfo.codeSize = data.size();
+	fragmentShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(data.data());
+	shaderStage = shaderStage_;
+	
+	module = ctx.device.createShaderModuleUnique(fragmentShaderCreateInfo, ctx.allocationCallbacks);
+	reflector.create(data);
+}
+
+void ShaderModule::destroy()
+{
+	module.reset();
+}
+
+vk::PipelineShaderStageCreateInfo ShaderModule::getPipelineShaderStage() const
+{
+	vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
+	pipelineShaderStageCreateInfo.stage = shaderStage;
+	pipelineShaderStageCreateInfo.module = *module;
+	pipelineShaderStageCreateInfo.pName = "main";
+	
+	return pipelineShaderStageCreateInfo;
 }
 

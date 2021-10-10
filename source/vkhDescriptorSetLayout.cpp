@@ -3,50 +3,21 @@
 #include "vkhDeviceContext.hpp"
 #include "vkhShader.hpp"
 
-#include <ranges>
-#include <utility.hpp>
-
 using namespace vkh;
 
-void DescriptorSetLayout::create(vkh::DeviceContext& ctx, ShaderReflector const& vertData,
-	ShaderReflector const& fragData)
+void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, ShaderReflector const& shaderInfos)
 {
 	deviceContext = &ctx;
-
-	auto a = fragData.createDescriptorSetDescriptors();
-	
-	auto const descriptorSetLayoutDatas = { vertData.getDescriptorSetLayoutData(), fragData.getDescriptorSetLayoutData() };
-	
-	for (auto const& e : std::ranges::join_view(descriptorSetLayoutDatas))
+	auto const dsLayoutData = shaderInfos.getDescriptorSetLayoutData();
+	descriptorSetLayouts.reserve(dsLayoutData.size());
+	for (auto const& layoutData : dsLayoutData)
 	{
-		assert(e.set_number < MaxSets);
-		
-		mergeVectors(layoutBindings[e.set_number], e.bindings);
+		descriptorSetLayouts.emplace(static_cast<DescriptorSetIndex>(layoutData.set_number),
+			deviceContext->device.createDescriptorSetLayoutUnique(layoutData.create_info));
 	}
-
-	for (size_t i = 0; i < MaxSets; i++)
-	{
-		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-		descriptorSetLayoutCreateInfo.bindingCount = std::size(layoutBindings[i]);
-		descriptorSetLayoutCreateInfo.pBindings = layoutBindings[i].data();
-
-		descriptorSetLayouts.push_back(
-			ctx.device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo, ctx.allocationCallbacks));
-	}
-	
-	descriptorsDescriptors = vertData.createDescriptorSetDescriptors();
-	mergeVectors(descriptorsDescriptors, fragData.createDescriptorSetDescriptors());
 }
 
-void DescriptorSetLayout::destroy()
+void ShaderDescriptorLayout::destroy()
 {
-	for (auto& descriptorLayout : descriptorSetLayouts)
-	{
-		deviceContext->device.destroyDescriptorSetLayout(descriptorLayout, deviceContext->allocationCallbacks);
-	}
-	
-	for (auto& e : layoutBindings)
-		e.clear();
-
 	descriptorSetLayouts.clear();
 }

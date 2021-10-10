@@ -17,3 +17,6 @@ void mergeVectors(std::vector<T>& a, std::vector<T> const& b)
 {
 	a.insert(a.end(), b.begin(), b.end());
 }
+
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...)->overloaded<Ts...>;

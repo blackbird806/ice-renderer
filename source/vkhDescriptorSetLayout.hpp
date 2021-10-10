@@ -1,34 +1,35 @@
 #pragma once
 
 #include <vulkan/vulkan.hpp>
+#include <unordered_map>
 #include "vkhShader.hpp"
 
 namespace vkh
 {
 	struct DeviceContext;
 
-	struct DescriptorSetLayout
+	enum DescriptorSetIndex : size_t
 	{
-		enum SetIndex : size_t
-		{
-			PipelineConstants = 0,
-			Textures,
-			Material,
-			DrawCall,
+		PipelineConstants = 0,
+		Textures,
+		Material,
+		DrawCall,
 
-			MaxSets
-		};
-
+		MaxSets
+	};
+	
+	struct ShaderDescriptorLayout
+	{
 		using LayoutBindings_t = std::array<std::vector<vk::DescriptorSetLayoutBinding>, MaxSets>;
 		
-		void create(vkh::DeviceContext& ctx, ShaderReflector const& vertData, ShaderReflector const& fragData);
+		void create(vkh::DeviceContext& ctx, ShaderReflector const& shaderInfos);
 
 		void destroy();
 
 		std::vector<ShaderReflector::DescriptorSetDescriptor> descriptorsDescriptors;
 		
 		LayoutBindings_t layoutBindings;
-		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+		std::unordered_map<DescriptorSetIndex, vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
 		DeviceContext* deviceContext;
 	};
 

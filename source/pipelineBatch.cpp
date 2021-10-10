@@ -6,9 +6,9 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, uint32 bufferCount)
 	pipeline = &pipeline_;
 
 	createDescriptorPool(bufferCount);
-	pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::PipelineConstants, bufferCount);
-	pipelineMaterialsSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::Material, bufferCount);
-	pipelineTexturesSets = pipeline_.createDescriptorSets(*descriptorPool, vkh::DescriptorSetLayout::SetIndex::Textures, bufferCount);
+	pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eVertex, vkh::DescriptorSetIndex::PipelineConstants, bufferCount);
+	pipelineMaterialsSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Material, bufferCount);
+	pipelineTexturesSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Textures, bufferCount);
 
 	// @TODO
 	pipelineConstantBuffers.resize(bufferCount);
@@ -16,7 +16,6 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, uint32 bufferCount)
 	pipelineConstantBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 	// @TODO
 	// @Review alignement
-	//pipelineConstantBufferInfo.size = 
 	pipelineConstantBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 	// @TODO
