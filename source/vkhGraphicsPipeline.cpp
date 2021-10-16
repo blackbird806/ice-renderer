@@ -172,13 +172,15 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	for (auto const& [_, d] : fragmentShaderDsLayout.descriptorSetLayouts)
 		descriptorSetLayouts.push_back(*d);
 	
-	// Create pipeline layout and render pass.
+	// Create pipeline layout
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.setLayoutCount = std::size(descriptorSetLayouts);
 	pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
+	pipelineLayout = ctx.device.createPipelineLayoutUnique(pipelineLayoutInfo, ctx.allocationCallbacks);
+	
 	std::vector<vk::PipelineShaderStageCreateInfo> shaderStages(2);
 	shaderStages[0] = info.vertexShader.getPipelineShaderStage();
 	shaderStages[1] = info.fragmentShader.getPipelineShaderStage();

@@ -29,11 +29,13 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 	
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
-
+	int width, height;
+	glfwGetWindowSize(win, &width, &height);
 	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
 		.vertexShader = std::move(vertexShader),
 		.fragmentShader = std::move(fragmentShader),
 		.renderPass = *defaultRenderPass,
+		.imageExtent = { (uint32)width, (uint32)height},
 		.msaaSamples = msaaSamples
 	};
 	
@@ -239,12 +241,13 @@ void VulkanContext::recreateSwapchain()
 
 	auto const vertSpv = readBinFile("shaders/vert.spv");
 	vkh::ShaderModule vertexShader;
-	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
+	vertexShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
 
 	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
 		.vertexShader = std::move(vertexShader),
 		.fragmentShader = std::move(fragmentShader),
 		.renderPass = *defaultRenderPass,
+		.imageExtent = {(uint32)width, (uint32)height},
 		.msaaSamples = msaaSamples
 	};
 

@@ -10,15 +10,34 @@ using namespace vkh;
 
 // @Improve use SPVRflect C++ API
 
+ShaderReflector::ShaderReflector(ShaderReflector&& rhs) noexcept : module(rhs.module)
+{
+	rhs.isValid = false;
+	isValid = true;
+}
+
+ShaderReflector& ShaderReflector::operator=(ShaderReflector&& rhs) noexcept
+{
+	module = rhs.module;
+	rhs.isValid = false;
+	isValid = true;
+	return *this;
+}
+
 void ShaderReflector::create(std::span<uint8 const> spvCode)
 {
 	SpvReflectResult result = spvReflectCreateShaderModule(spvCode.size_bytes(), spvCode.data(), &module);
 	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+	isValid = true;
 }
 
 void ShaderReflector::destroy()
 {
-	spvReflectDestroyShaderModule(&module);
+	if (isValid)
+	{
+		spvReflectDestroyShaderModule(&module);
+		isValid = false;
+	}
 }
 
 ShaderReflector::~ShaderReflector()
@@ -417,6 +436,7 @@ void ShaderModule::create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shade
 void ShaderModule::destroy()
 {
 	module.reset();
+	reflector.destroy();
 }
 
 vk::PipelineShaderStageCreateInfo ShaderModule::getPipelineShaderStage() const

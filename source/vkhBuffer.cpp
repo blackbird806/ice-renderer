@@ -10,6 +10,7 @@ Buffer::Buffer(Buffer&& rhs) noexcept :
 
 Buffer& Buffer::operator=(Buffer&& rhs) noexcept
 {
+	destroy();
 	buffer = rhs.buffer;
 	rhs.buffer = vk::Buffer();
 	return *this;

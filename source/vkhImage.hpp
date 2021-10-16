@@ -6,7 +6,12 @@ namespace vkh
 {
 	struct Image
 	{
-		void create(vkh::DeviceContext& ctx, vk::ImageCreateInfo imageInfo, vma::AllocationCreateInfo allocInfo);
+		Image() = default;
+		Image(Image&& rhs) noexcept;
+		Image& operator=(Image&& rhs) noexcept;
+		
+		void create(vkh::DeviceContext& ctx, vk::ImageCreateInfo const& imageInfo, vma::AllocationCreateInfo const& allocInfo);
+
 		void destroy();
 
 		void transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);

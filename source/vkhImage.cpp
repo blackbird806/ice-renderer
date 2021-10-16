@@ -4,7 +4,25 @@
 
 using namespace vkh;
 
-void Image::create(vkh::DeviceContext& ctx, vk::ImageCreateInfo imageInfo_, vma::AllocationCreateInfo allocInfo)
+Image::Image(Image&& rhs) noexcept : deviceContext(rhs.deviceContext), handle(rhs.handle),
+	allocation(rhs.allocation), imageInfo(rhs.imageInfo)
+{
+	rhs.handle = vk::Image();
+}
+
+Image& Image::operator=(Image&& rhs) noexcept
+{
+	destroy();
+	deviceContext = rhs.deviceContext;
+	imageInfo = rhs.imageInfo;
+	handle = rhs.handle;
+	allocation = rhs.allocation;
+	rhs.handle = vk::Image();
+	
+	return *this;
+}
+
+void Image::create(vkh::DeviceContext& ctx, vk::ImageCreateInfo const& imageInfo_, vma::AllocationCreateInfo const& allocInfo)
 {
 	deviceContext = &ctx;
 	imageInfo = imageInfo_;

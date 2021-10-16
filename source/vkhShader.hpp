@@ -16,7 +16,10 @@ namespace vkh
 	class ShaderReflector
 	{
 	public:
-
+		ShaderReflector() = default;
+		ShaderReflector(ShaderReflector&&) noexcept;
+		ShaderReflector& operator=(ShaderReflector&&) noexcept;
+		
 		void create(std::span<uint8 const> spvCode);
 		void destroy();
 		~ShaderReflector();
@@ -91,6 +94,7 @@ namespace vkh
 
 	private:
 		SpvReflectShaderModule module;
+		bool isValid = false;
 	};
 
 	struct ShaderModule

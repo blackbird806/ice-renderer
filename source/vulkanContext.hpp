@@ -46,7 +46,7 @@ struct VulkanContext
 
 	std::function<void()> onSwapchainRecreate;
 	
-	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e1;
+	vk::SampleCountFlagBits const msaaSamples = vk::SampleCountFlagBits::e4;
 	uint const maxFramesInFlight = 2;
 	uint currentFrame = 0;
 	uint32 imageIndex = 0;

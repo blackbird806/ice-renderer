@@ -9,68 +9,6 @@
 #include "vulkanContext.hpp"
 #include "vkhUtility.hpp"
 
-static vk::UniqueRenderPass createImguiRenderPass(vkh::DeviceContext& deviceContext,
-	vk::Format colorFormat)
-{
-	vk::AttachmentDescription colorAttachment = {};
-	colorAttachment.format = colorFormat;
-	colorAttachment.samples = vk::SampleCountFlagBits::e1;
-	colorAttachment.loadOp = vk::AttachmentLoadOp::eDontCare;
-	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eLoad;
-	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
-	colorAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
-
-	vk::AttachmentDescription depthAttachment = {};
-	depthAttachment.format = vkh::findDepthFormat(deviceContext.physicalDevice);
-	depthAttachment.samples = vk::SampleCountFlagBits::e1;
-	depthAttachment.loadOp = vk::AttachmentLoadOp::eDontCare;
-	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-	depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-	depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-	depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
-	depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-	vk::AttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
-
-	vk::AttachmentReference depthAttachmentRef = {};
-	depthAttachmentRef.attachment = 1;
-	depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-	vk::SubpassDescription subpass = {};
-	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-	vk::SubpassDependency dependency = {};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	dependency.srcAccessMask = vk::AccessFlagBits();
-	dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-
-	vk::AttachmentDescription attachments[] =
-	{
-		colorAttachment,
-		depthAttachment,
-	};
-
-	vk::RenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.attachmentCount = static_cast<uint32>(std::size(attachments));
-	renderPassInfo.pAttachments = attachments;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 1;
-	renderPassInfo.pDependencies = &dependency;
-
-	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
-}
-
 void GUILayer::init(VulkanContext& vkContext)
 {
 	auto const& device = vkContext.deviceContext.device;
@@ -117,11 +55,11 @@ void GUILayer::init(VulkanContext& vkContext)
 	init_info.DescriptorPool = *imguiPool;
 	init_info.MinImageCount = vkContext.maxFramesInFlight;
 	init_info.ImageCount = vkContext.maxFramesInFlight;
-	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.MSAASamples = (VkSampleCountFlagBits)vkContext.msaaSamples;
 	init_info.Allocator = reinterpret_cast<VkAllocationCallbacks const*>(vkContext.deviceContext.allocationCallbacks);
 
-	renderPass = createImguiRenderPass(vkContext.deviceContext, vkContext.swapchain.format);
-
+	renderPass = vkh::createDefaultRenderPassMSAA(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
+	
 	createFramebuffers(vkContext);
 	
 	ImGui_ImplVulkan_Init(&init_info, *renderPass);
@@ -173,7 +111,8 @@ void GUILayer::render(vk::CommandBuffer commandBuffer, uint index, vk::Extent2D 
 
 void GUILayer::handleSwapchainRecreation(VulkanContext& vkContext)
 {
-	renderPass = createImguiRenderPass(vkContext.deviceContext, vkContext.swapchain.format);
+	renderPass = vkh::createDefaultRenderPassMSAA(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
+
 	destroyFrameBuffers();
 	createFramebuffers(vkContext);
 }
@@ -187,11 +126,13 @@ void GUILayer::destroy()
 
 void GUILayer::createFramebuffers(VulkanContext& vkContext)
 {
+	framebuffers.reserve(vkContext.maxFramesInFlight);
 	for (int i = 0; i < vkContext.maxFramesInFlight; i++)
 	{
 		vk::ImageView attachments[] = {
-			*vkContext.swapchain.imageViews[i],
+			*vkContext.msImageView,
 			*vkContext.depthImageView,
+			*vkContext.swapchain.imageViews[i],
 		};
 
 		vk::FramebufferCreateInfo framebufferInfo{};

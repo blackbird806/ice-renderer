@@ -30,9 +30,9 @@ int main()
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
 
-	PipelineBatch pipelineBatch;
-	pipelineBatch.create(context.defaultPipeline, context.maxFramesInFlight);
-	
+	//PipelineBatch pipelineBatch;
+	//pipelineBatch.create(context.defaultPipeline, context.maxFramesInFlight);
+	//
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -56,8 +56,8 @@ int main()
 
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		
-			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
-			mesh.draw(cmdBuffer, context.currentFrame);
+			//cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
+			//mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();
 		

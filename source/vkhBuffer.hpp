@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.hpp>
 #include <span>
-#include <type_traits>
 
 #include "ice.hpp"
 
@@ -30,7 +29,6 @@ namespace vkh
 		template<typename T>
 		void writeStruct(T&& struct_)
 		{
-			//static_assert(std::is_standard_layout_v<T>);
 			writeData({ reinterpret_cast<uint8*>(&struct_), sizeof(T) });
 		}
 		
