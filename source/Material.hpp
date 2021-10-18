@@ -1,32 +1,33 @@
 #pragma once
+#include <unordered_map>
 #include <vector>
-#include <variant>
 #include <vulkan/vulkan.hpp>
 
 #include "ice.hpp"
+#include "vkhBuffer.hpp"
+#include "vkhShader.hpp"
 
 namespace vkh {
 	struct GraphicsPipeline;
-	class Buffer;
 }
 
+//@Review material builder ?
 struct Material
 {
-	struct WriteDescriptorSetInfos
-	{
-		using WriteInfo_t = std::variant<vk::DescriptorBufferInfo, vk::DescriptorImageInfo>;
-		std::vector<vk::WriteDescriptorSet> descriptorsWrite;
-		std::vector<WriteInfo_t> writeInfos;
-	};
-	
-	void setBuffer(vkh::Buffer const& buffer);
-	void setBuffer(std::string const& name, vkh::Buffer const& buffer);
+	void create(vkh::DeviceContext& deviceContext);
 
+	size_t getUniformBufferSize() const noexcept;
+	
+	void update();
+	
 	void bind(vk::CommandBuffer cmdBuffer, uint32 index);
 	
 	void updateDescriptorSets();
 	
 	vkh::GraphicsPipeline* graphicsPipeline;
+
+	std::unordered_map<std::string, vkh::ShaderReflector::DescriptorSetDescriptor::Member> parameters;
+	
 	std::vector<vk::DescriptorSet> descriptorSets;
-	WriteDescriptorSetInfos descriptorsWriteInfos;
+	vkh::Buffer uniformBuffer;
 };

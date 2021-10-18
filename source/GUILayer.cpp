@@ -9,8 +9,7 @@
 #include "vkhUtility.hpp"
 #include "vulkanContext.hpp"
 
-static
-vk::UniqueRenderPass createDefaultRenderPassMSAAImgui(vkh::DeviceContext& deviceContext,
+static vk::UniqueRenderPass createDefaultRenderPassMSAAImgui(vkh::DeviceContext& deviceContext,
 	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
 {
 	vk::AttachmentDescription colorAttachment = {};
@@ -154,13 +153,16 @@ void GUILayer::init(VulkanContext& vkContext)
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-void GUILayer::render(vk::CommandBuffer commandBuffer, uint index, vk::Extent2D extent)
+void GUILayer::startFrame()
 {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui_ImplVulkan_NewFrame();
 	ImGui::NewFrame();
+}
 
-	ImGui::ShowDemoWindow();
+void GUILayer::render(vk::CommandBuffer commandBuffer, uint index, vk::Extent2D extent)
+{
+	//ImGui::ShowDemoWindow();
 
 	ImGui::Render();
 

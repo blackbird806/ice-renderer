@@ -2,7 +2,9 @@
 
 #include "vulkanContext.hpp"
 #include "mesh.hpp"
+#include "material.hpp"
 #include "GUILayer.hpp"
+#include "imgui/imgui.h"
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 	auto& vkContext = *static_cast<VulkanContext*>(glfwGetWindowUserPointer(window));
@@ -88,6 +90,18 @@ int main()
 
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
+
+	Material mtrl;
+	mtrl.parameters["brightness"].value = 1.0f;
+	mtrl.graphicsPipeline = &context.defaultPipeline;
+	mtrl.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Material, context.maxFramesInFlight);
+	mtrl.create(context.deviceContext);
+	mtrl.update();
+	mtrl.updateDescriptorSets();
+	
+	vk::ClearValue clearsValues[2];
+	clearsValues[0].color = vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} };
+	clearsValues[1].depthStencil = vk::ClearDepthStencilValue(1.0, 0.0);
 	
 	while (!glfwWindowShouldClose(window))
 	{
@@ -96,26 +110,24 @@ int main()
 		if (!context.startFrame())
 			continue;
 		
+		gui.startFrame();
 		auto cmdBuffer = context.commandBuffers.begin(context.currentFrame);
 
+		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
+		
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = *context.defaultRenderPass;
 		renderPassInfo.framebuffer = *context.framebuffers[context.currentFrame];
 		renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 		renderPassInfo.renderArea.extent = context.swapchain.extent;
-
-		vk::ClearValue clearsValues[2];
-		clearsValues[0].color = vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} };
-		clearsValues[1].depthStencil = vk::ClearDepthStencilValue(1.0, 0.0);
 		renderPassInfo.clearValueCount = std::size(clearsValues);
 		renderPassInfo.pClearValues = clearsValues;
-
+		
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
-			vk::DescriptorSet sets[] = { frameSets[context.currentFrame], modelSets[context.currentFrame] };
+			vk::DescriptorSet sets[] = { frameSets[context.currentFrame], modelSets[context.currentFrame], mtrl.descriptorSets[context.currentFrame] };
 			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets), sets, 0, nullptr);
-			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, 1, &modelSets[context.currentFrame], 0, nullptr);
 			mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();

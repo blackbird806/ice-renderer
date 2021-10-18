@@ -1,13 +1,13 @@
 #version 450
 
-// updated once per frame (descriptor set inside vkContext ?)
+// updated once per frame 
 layout(set = 0, binding = 0) uniform FrameConstants {
     mat4 view;
     mat4 proj;
 };
 
 // updated once per drawcall
-layout(set = 1, binding = 0) uniform Drawcall {
+layout(set = 2, binding = 0) uniform Drawcall {
     mat4 model;
 };
 

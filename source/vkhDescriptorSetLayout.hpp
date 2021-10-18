@@ -13,7 +13,7 @@ namespace vkh
 	{
 		PipelineConstants = 0,
 		//Textures,
-		//Material,
+		Material,
 		DrawCall,
 
 		MaxSets

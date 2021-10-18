@@ -24,6 +24,7 @@ namespace vkh
 		void destroy();
 		~ShaderReflector();
 
+		// @TODO Rename
 		struct DescriptorSetDescriptor
 		{
 			struct Member;
@@ -40,7 +41,7 @@ namespace vkh
 				struct Sampler1D { };
 				struct Sampler2D { };
 				struct Sampler3D { };
-				
+				// @Review used by material, move and rename ?
 				using Type = std::variant<
 					float, double,
 					int8, int16, int32, int64,

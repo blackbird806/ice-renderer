@@ -10,6 +10,7 @@ class GUILayer
 public:
 	void init(VulkanContext& vkContext);
 
+	void startFrame();
 	void render(vk::CommandBuffer commandBuffer, uint index, vk::Extent2D extent);
 	void handleSwapchainRecreation(VulkanContext& vkContext);
 	
