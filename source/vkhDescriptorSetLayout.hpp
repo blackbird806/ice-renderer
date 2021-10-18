@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <unordered_map>
+#include <span>
 #include "vkhShader.hpp"
 
 namespace vkh
@@ -11,8 +12,8 @@ namespace vkh
 	enum DescriptorSetIndex : size_t
 	{
 		PipelineConstants = 0,
-		Textures,
-		Material,
+		//Textures,
+		//Material,
 		DrawCall,
 
 		MaxSets
@@ -22,7 +23,7 @@ namespace vkh
 	{
 		using LayoutBindings_t = std::array<std::vector<vk::DescriptorSetLayoutBinding>, MaxSets>;
 		
-		void create(vkh::DeviceContext& ctx, ShaderReflector const& shaderInfos);
+		void create(vkh::DeviceContext& ctx, std::span<ShaderReflector const*> shadersInfos);
 
 		void destroy();
 

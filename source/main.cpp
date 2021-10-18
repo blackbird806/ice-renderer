@@ -1,8 +1,6 @@
-#include <iostream>
 #include <GLFW/glfw3.h>
 
 #include "vulkanContext.hpp"
-#include "pipelineBatch.hpp"
 #include "mesh.hpp"
 #include "GUILayer.hpp"
 
@@ -30,9 +28,67 @@ int main()
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
 
-	//PipelineBatch pipelineBatch;
-	//pipelineBatch.create(context.defaultPipeline, context.maxFramesInFlight);
-	//
+	struct FrameConstants
+	{
+		glm::mat4 view;
+		glm::mat4 proj;
+	} frameConstants;
+	
+	frameConstants.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	frameConstants.proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 10.0f);
+	frameConstants.proj[1][1] *= -1;
+
+	vkh::Buffer frameConstantsBuffer;
+	{
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+		vk::BufferCreateInfo bufferCreateInfo;
+		bufferCreateInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+		bufferCreateInfo.size = sizeof(FrameConstants);
+		bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+		frameConstantsBuffer.create(context.deviceContext.gpuAllocator, bufferCreateInfo, allocInfo);
+		frameConstantsBuffer.writeStruct(frameConstants);
+	}
+
+	auto frameSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::PipelineConstants, context.maxFramesInFlight);
+	auto modelSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
+
+	for (auto& set : modelSets)
+	{
+		vk::DescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = mesh.modelBuffer.buffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(glm::mat4);
+
+		vk::WriteDescriptorSet descriptorWrites[1];
+		descriptorWrites[0].dstSet = set;
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
+	}
+	
+	for (auto& set : frameSets)
+	{
+		vk::DescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = frameConstantsBuffer.buffer;
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(FrameConstants);
+
+		vk::WriteDescriptorSet descriptorWrites[1];
+		descriptorWrites[0].dstSet = set;
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
+	}
+	
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -56,8 +112,11 @@ int main()
 
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		
-			//cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
-			//mesh.draw(cmdBuffer, context.currentFrame);
+			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
+			vk::DescriptorSet sets[] = { frameSets[context.currentFrame], modelSets[context.currentFrame] };
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets), sets, 0, nullptr);
+			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, 1, &modelSets[context.currentFrame], 0, nullptr);
+			mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();
 		

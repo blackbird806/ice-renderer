@@ -2,16 +2,25 @@
 
 #include "vkhDeviceContext.hpp"
 #include "vkhShader.hpp"
+#include "utility.hpp"
 
 using namespace vkh;
 
-void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, ShaderReflector const& shaderInfos)
+void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderReflector const*> shadersInfos)
 {
 	deviceContext = &ctx;
-	auto const dsLayoutData = shaderInfos.getDescriptorSetLayoutData();
+	std::vector<ShaderReflector::DescriptorSetLayoutData> dsLayoutData;
+	
+	for (auto const& shaderInfo : shadersInfos)
+		for (auto const& e : shaderInfo->getDescriptorSetLayoutData())
+			insertUnique(dsLayoutData, e);
+
 	descriptorSetLayouts.reserve(dsLayoutData.size());
-	for (auto const& layoutData : dsLayoutData)
+	for (auto& layoutData : dsLayoutData)
 	{
+		layoutData.create_info.pBindings = layoutData.bindings.data();
+		layoutData.create_info.bindingCount = layoutData.bindings.size();
+		
 		descriptorSetLayouts.emplace(static_cast<DescriptorSetIndex>(layoutData.set_number),
 			deviceContext->device.createDescriptorSetLayoutUnique(layoutData.create_info));
 	}

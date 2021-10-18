@@ -84,6 +84,8 @@ namespace vkh
 			uint32 set_number;
 			vk::DescriptorSetLayoutCreateInfo create_info;
 			std::vector<vk::DescriptorSetLayoutBinding> bindings;
+
+			bool operator==(DescriptorSetLayoutData const& rhs) const noexcept;
 		};
 		
 		[[nodiscard]] VertexDescription getVertexDescriptions() const; 

@@ -159,17 +159,13 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	colorBlending.blendConstants[3] = 0.0f; // Optional
 
 	// @Review abstract pipeline layout + vertexInput (aka shader reflect infos) ?
-	
-	vertexShaderDsLayout.create(ctx, info.vertexShader.reflector);
-	fragmentShaderDsLayout.create(ctx, info.fragmentShader.reflector);
+	ShaderReflector const* shadersInfos[] = { &info.vertexShader.reflector, &info.fragmentShader.reflector };
+	dsLayout.create(ctx, shadersInfos);
 
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
-	descriptorSetLayouts.reserve(fragmentShaderDsLayout.descriptorSetLayouts.size() + vertexShaderDsLayout.descriptorSetLayouts.size());
+	descriptorSetLayouts.reserve(dsLayout.descriptorSetLayouts.size());
 
-	for (auto const& [_, d] : vertexShaderDsLayout.descriptorSetLayouts)
-		descriptorSetLayouts.push_back(*d);
-
-	for (auto const& [_, d] : fragmentShaderDsLayout.descriptorSetLayouts)
+	for (auto const& [_, d] : dsLayout.descriptorSetLayouts)
 		descriptorSetLayouts.push_back(*d);
 	
 	// Create pipeline layout
@@ -214,17 +210,12 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	pipeline = ctx.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, ctx.allocationCallbacks);
 }
 
-std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vk::ShaderStageFlagBits shaderStage, vkh::DescriptorSetIndex setIndex, uint32 count)
+std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetIndex setIndex, uint32 count)
 {
 	assert(setIndex < MaxSets);
 	assert(count > 0);
-	assert(shaderStage == vk::ShaderStageFlagBits::eVertex || shaderStage == vk::ShaderStageFlagBits::eFragment);
 
-	vk::DescriptorSetLayout layout;
-	if (shaderStage == vk::ShaderStageFlagBits::eVertex)
-		layout = *vertexShaderDsLayout.descriptorSetLayouts[setIndex];
-	else if (shaderStage == vk::ShaderStageFlagBits::eFragment)
-		layout = *fragmentShaderDsLayout.descriptorSetLayouts[setIndex];
+	vk::DescriptorSetLayout const layout = *dsLayout.descriptorSetLayouts[setIndex];
 
 	std::vector<vk::DescriptorSetLayout> layouts(count, layout);
 
@@ -238,8 +229,7 @@ std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::D
 
 void vkh::GraphicsPipeline::destroy()
 {
-	vertexShaderDsLayout.destroy();
-	fragmentShaderDsLayout.destroy();
+	dsLayout.destroy();
 	pipelineLayout.reset();
 	pipeline.reset();
 }

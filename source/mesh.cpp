@@ -2,7 +2,6 @@
 
 #include <tiny/tiny_obj_loader.h>
 
-
 #include "utility.hpp"
 #include "vkhDeviceContext.hpp"
 
@@ -122,21 +121,17 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 	{
 		vk::BufferCreateInfo uniformBufferInfo;
 		uniformBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-		uniformBufferInfo.size = sizeof(ModelBuffer);
+		uniformBufferInfo.size = sizeof(glm::mat4);
 		uniformBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 		vma::AllocationCreateInfo allocInfo;
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		uniformBuffer.create(ctx.gpuAllocator, uniformBufferInfo, allocInfo);
+		modelBuffer.create(ctx.gpuAllocator, uniformBufferInfo, allocInfo);
 		
 		// @TODO
-		ModelBuffer ubo{};
-		ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
+		glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		
-		uniformBuffer.writeStruct(ubo);
+		modelBuffer.writeStruct(model);
 	}
 	
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 #include <filesystem>
 #include <span>
 
@@ -20,3 +21,10 @@ void mergeVectors(std::vector<T>& a, std::vector<T> const& b)
 
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 template<class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
+template<typename C, typename E>
+void insertUnique(C& cont, E&& e)
+{
+	if (std::find(cont.begin(), cont.end(), e) == cont.end())
+		cont.insert(cont.end(), std::forward<E>(e));
+}

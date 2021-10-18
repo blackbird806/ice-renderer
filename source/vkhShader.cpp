@@ -207,6 +207,11 @@ static uint32_t formatSize(VkFormat format)
 
 //@TODO precompute shader reflexion
 
+bool ShaderReflector::DescriptorSetLayoutData::operator==(DescriptorSetLayoutData const& rhs) const noexcept
+{
+	return set_number == rhs.set_number;
+}
+
 // https://github.com/KhronosGroup/SPIRV-Reflect/blob/master/examples/main_io_variables.cpp
 ShaderReflector::VertexDescription ShaderReflector::getVertexDescriptions() const
 {
@@ -283,8 +288,6 @@ std::vector<ShaderReflector::DescriptorSetLayoutData> ShaderReflector::getDescri
 			layout_binding.stageFlags = static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
 		}
 		layout.set_number = refl_set.set;
-		layout.create_info.bindingCount = refl_set.binding_count;
-		layout.create_info.pBindings = layout.bindings.data();
 	}
 	return set_layouts;
 }

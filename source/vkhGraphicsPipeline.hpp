@@ -24,13 +24,12 @@ namespace vkh
 		
 		void create(vkh::DeviceContext& ctx, CreateInfo const& createInfo);
 
-		std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool pool, vk::ShaderStageFlagBits shaderStage, vkh::DescriptorSetIndex setIndex, uint32 count);
+		std::vector<vk::DescriptorSet> createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetIndex setIndex, uint32 count);
 		void destroy();
 		
 		vkh::DeviceContext* deviceContext;
 
-		vkh::ShaderDescriptorLayout vertexShaderDsLayout;
-		vkh::ShaderDescriptorLayout fragmentShaderDsLayout;
+		vkh::ShaderDescriptorLayout dsLayout;
 		
 		vk::UniquePipeline pipeline;
 		vk::UniquePipelineLayout pipelineLayout;

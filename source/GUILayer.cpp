@@ -6,8 +6,87 @@
 #include <imgui/imgui_impl_glfw.h>
 #include <imgui/imgui_impl_vulkan.h>
 
-#include "vulkanContext.hpp"
 #include "vkhUtility.hpp"
+#include "vulkanContext.hpp"
+
+static
+vk::UniqueRenderPass createDefaultRenderPassMSAAImgui(vkh::DeviceContext& deviceContext,
+	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
+{
+	vk::AttachmentDescription colorAttachment = {};
+	colorAttachment.format = colorFormat;
+	colorAttachment.samples = msaaSamples;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eLoad;
+	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::AttachmentDescription colorAttachmentResolve{};
+	colorAttachmentResolve.format = colorFormat;
+	colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
+	colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eStore;
+	colorAttachmentResolve.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachmentResolve.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachmentResolve.initialLayout = vk::ImageLayout::eUndefined;
+	colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+	vk::AttachmentDescription depthAttachment = {};
+	depthAttachment.format = vkh::findDepthFormat(deviceContext.physicalDevice);
+	depthAttachment.samples = msaaSamples;
+	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+	depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+	vk::AttachmentReference colorAttachmentRef = {};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::AttachmentReference depthAttachmentRef = {};
+	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+	vk::AttachmentReference colorAttachmentResolveRef{};
+	colorAttachmentResolveRef.attachment = 2;
+	colorAttachmentResolveRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::SubpassDescription subpass = {};
+	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pResolveAttachments = &colorAttachmentResolveRef;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+	vk::SubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependency.srcAccessMask = vk::AccessFlagBits();
+	dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
+	vk::AttachmentDescription attachments[] =
+	{
+		colorAttachment,
+		depthAttachment,
+		colorAttachmentResolve,
+	};
+
+	vk::RenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.attachmentCount = static_cast<uint32>(std::size(attachments));
+	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
+}
 
 void GUILayer::init(VulkanContext& vkContext)
 {
@@ -58,7 +137,7 @@ void GUILayer::init(VulkanContext& vkContext)
 	init_info.MSAASamples = (VkSampleCountFlagBits)vkContext.msaaSamples;
 	init_info.Allocator = reinterpret_cast<VkAllocationCallbacks const*>(vkContext.deviceContext.allocationCallbacks);
 
-	renderPass = vkh::createDefaultRenderPassMSAA(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
+	renderPass = createDefaultRenderPassMSAAImgui(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
 	
 	createFramebuffers(vkContext);
 	
@@ -111,7 +190,7 @@ void GUILayer::render(vk::CommandBuffer commandBuffer, uint index, vk::Extent2D 
 
 void GUILayer::handleSwapchainRecreation(VulkanContext& vkContext)
 {
-	renderPass = vkh::createDefaultRenderPassMSAA(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
+	renderPass = createDefaultRenderPassMSAAImgui(vkContext.deviceContext, vkContext.swapchain.format, vkContext.msaaSamples);
 
 	destroyFrameBuffers();
 	createFramebuffers(vkContext);

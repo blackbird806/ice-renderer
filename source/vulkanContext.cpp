@@ -189,14 +189,14 @@ void VulkanContext::createDescriptorPool()
 {
 	vk::DescriptorPoolSize poolSize[2];
 	poolSize[0].type = vk::DescriptorType::eUniformBuffer;
-	poolSize[0].descriptorCount = swapchain.images.size();
+	poolSize[0].descriptorCount = swapchain.images.size() * 100;
 	poolSize[1].type = vk::DescriptorType::eCombinedImageSampler;
-	poolSize[1].descriptorCount = swapchain.images.size();
+	poolSize[1].descriptorCount = swapchain.images.size() * 100;
 
 	vk::DescriptorPoolCreateInfo poolInfo{};
 	poolInfo.poolSizeCount = std::size(poolSize);
 	poolInfo.pPoolSizes = poolSize;
-	poolInfo.maxSets = swapchain.images.size();
+	poolInfo.maxSets = 200;
 
 	descriptorPool = deviceContext.device.createDescriptorPoolUnique(poolInfo, deviceContext.allocationCallbacks);
 }
@@ -268,6 +268,8 @@ void VulkanContext::recreateSwapchain()
 	onSwapchainRecreate();
 }
 
+// @Review Synchronization
+// @Review CommandBuffer management
 bool VulkanContext::startFrame()
 {
 	deviceContext.device.waitForFences(1, &inFlightFences[currentFrame].get(), true, UINT64_MAX);
@@ -322,6 +324,5 @@ void VulkanContext::endFrame()
 	presentInfo.pImageIndices = &imageIndex;
 
 	deviceContext.presentQueue.presentKHR(presentInfo);
-	
 	currentFrame = (currentFrame + 1) % maxFramesInFlight;
 }

@@ -5,25 +5,25 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, uint32 bufferCount)
 {
 	pipeline = &pipeline_;
 
-	createDescriptorPool(bufferCount);
-	pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eVertex, vkh::DescriptorSetIndex::PipelineConstants, bufferCount);
-	pipelineMaterialsSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Material, bufferCount);
-	pipelineTexturesSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Textures, bufferCount);
+	//createDescriptorPool(bufferCount);
+	//pipelineConstantSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eVertex, vkh::DescriptorSetIndex::PipelineConstants, bufferCount);
+	//pipelineMaterialsSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Material, bufferCount);
+	//pipelineTexturesSets = pipeline_.createDescriptorSets(*descriptorPool, vk::ShaderStageFlagBits::eFragment, vkh::DescriptorSetIndex::Textures, bufferCount);
 
-	// @TODO
-	pipelineConstantBuffers.resize(bufferCount);
-	vk::BufferCreateInfo pipelineConstantBufferInfo;
-	pipelineConstantBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-	// @TODO
-	// @Review alignement
-	pipelineConstantBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+	//// @TODO
+	//pipelineConstantBuffers.resize(bufferCount);
+	//vk::BufferCreateInfo pipelineConstantBufferInfo;
+	//pipelineConstantBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+	//// @TODO
+	//// @Review alignement
+	//pipelineConstantBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-	// @TODO
-	vma::AllocationCreateInfo allocInfo;
-	allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-	
-	for (auto& buffer : pipelineConstantBuffers)
-		buffer.create(pipeline_.deviceContext->gpuAllocator, pipelineConstantBufferInfo, allocInfo);
+	//// @TODO
+	//vma::AllocationCreateInfo allocInfo;
+	//allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+	//
+	//for (auto& buffer : pipelineConstantBuffers)
+	//	buffer.create(pipeline_.deviceContext->gpuAllocator, pipelineConstantBufferInfo, allocInfo);
 }
 
 void PipelineBatch::destroy()

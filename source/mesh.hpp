@@ -34,13 +34,6 @@ struct LoadedMesh
 	std::vector<uint32> indices;
 };
 
-struct ModelBuffer
-{
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
-};
-
 // @TODO true hash function
 namespace std {
 	template<> struct hash<LoadedMesh::Vertex> {
@@ -67,5 +60,5 @@ public:
 	
 	vkh::Buffer vertexBuffer;
 	vkh::Buffer indexBuffer;
-	vkh::Buffer uniformBuffer;
+	vkh::Buffer modelBuffer;
 };
