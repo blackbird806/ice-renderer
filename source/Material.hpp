@@ -26,7 +26,7 @@ struct Material
 	
 	vkh::GraphicsPipeline* graphicsPipeline;
 
-	std::unordered_map<std::string, vkh::ShaderReflector::DescriptorSetDescriptor::Member> parameters;
+	std::vector<vkh::ShaderReflector::DescriptorSetDescriptor::Member> parameters;
 	
 	std::vector<vk::DescriptorSet> descriptorSets;
 	vkh::Buffer uniformBuffer;

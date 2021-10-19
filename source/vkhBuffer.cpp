@@ -38,14 +38,24 @@ void Buffer::destroy()
 	}
 }
 
+	// @Review persistent mapped memory ?
+void* Buffer::map()
+{
+	return gpuAllocator.mapMemory(allocation);
+}
+
+void Buffer::unmap()
+{
+	gpuAllocator.unmapMemory(allocation);
+}
+
 void Buffer::writeData(std::span<uint8> data)
 {
 	assert(data.size_bytes() <= size);
 
-	// @Review persistent mapped memory ?
-	void* mapped = gpuAllocator.mapMemory(allocation);
+	void* mapped = map();
 		memcpy(mapped, data.data(), data.size_bytes());
-	gpuAllocator.unmapMemory(allocation);
+	unmap();
 }
 
 Buffer::~Buffer()

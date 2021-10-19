@@ -24,6 +24,9 @@ namespace vkh
 		
 		void destroy();
 
+		[[nodiscard]] void* map();
+		void unmap();
+		
 		void writeData(std::span<uint8> data);
 
 		template<typename T>

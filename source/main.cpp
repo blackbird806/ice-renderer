@@ -92,7 +92,13 @@ int main()
 	}
 
 	Material mtrl;
-	mtrl.parameters["brightness"].value = 1.0f;
+	float brightness = 1.0f;
+	glm::vec3 color{ 1.0f, 1.0f, 1.0f };
+	mtrl.parameters.push_back({ "brightness", 0, {}, brightness });
+	mtrl.parameters.push_back({ "a", 0, {}, 0.0f });
+	mtrl.parameters.push_back({ "b", 0, {}, 0.0f });
+	mtrl.parameters.push_back({ "c", 0, {}, 0.0f });
+	mtrl.parameters.push_back({ "color", 0, {}, color });
 	mtrl.graphicsPipeline = &context.defaultPipeline;
 	mtrl.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Material, context.maxFramesInFlight);
 	mtrl.create(context.deviceContext);
@@ -114,6 +120,20 @@ int main()
 		auto cmdBuffer = context.commandBuffers.begin(context.currentFrame);
 
 		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
+
+		if (ImGui::DragFloat("brightness", &brightness, 0.01f, 0.0f, 1.0f))
+		{
+			mtrl.parameters[0].value = brightness;
+			mtrl.updateBuffer();
+		}
+
+		float* data = (float*)mtrl.uniformBuffer.map();
+		if (ImGui::ColorEdit3("color", &data[4]))
+		{
+			
+			//mtrl.updateBuffer();
+		}
+		mtrl.uniformBuffer.unmap();
 		
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = *context.defaultRenderPass;

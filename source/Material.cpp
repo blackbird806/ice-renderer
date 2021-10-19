@@ -20,8 +20,8 @@ size_t Material::getUniformBufferSize() const noexcept
 {
 	size_t bufferSize = 0;
 
-	for (auto const& [_, v] : parameters)
-		bufferSize += v.getSize();
+	for (auto const& p : parameters)
+		bufferSize += p.getSize();
 	
 	return bufferSize;
 }
@@ -29,20 +29,19 @@ size_t Material::getUniformBufferSize() const noexcept
 //@Review 
 void Material::updateBuffer()
 {
-	std::vector<uint8> rawData;
-	rawData.resize(getUniformBufferSize());
+	void* bufferData = uniformBuffer.map();
 	size_t offset = 0;
-	for (auto const& [_, v] : parameters)
+	for (auto const& p : parameters)
 	{
-		if ((v.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY) || (v.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT))
+		if ((p.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY) || (p.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT))
 		{
 			// array/structs inside materials are unsuported for now
 			assert(false);
 		}
-		memcpy(rawData.data() + offset, &v.value, v.getSize());
-		offset += v.getSize();
+		memcpy((uint8*)bufferData + offset, &p.value, p.getSize());
+		offset += p.getSize();
 	}
-	uniformBuffer.writeData(std::span(rawData));
+	uniformBuffer.unmap();
 }
 
 void Material::bind(vk::CommandBuffer cmdBuffer, uint32 index)
