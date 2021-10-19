@@ -27,7 +27,7 @@ size_t Material::getUniformBufferSize() const noexcept
 }
 
 //@Review 
-void Material::update()
+void Material::updateBuffer()
 {
 	std::vector<uint8> rawData;
 	rawData.resize(getUniformBufferSize());

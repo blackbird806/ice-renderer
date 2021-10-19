@@ -18,7 +18,7 @@ struct Material
 
 	size_t getUniformBufferSize() const noexcept;
 	
-	void update();
+	void updateBuffer();
 	
 	void bind(vk::CommandBuffer cmdBuffer, uint32 index);
 	

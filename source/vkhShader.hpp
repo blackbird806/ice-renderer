@@ -94,7 +94,8 @@ namespace vkh
 
 		std::vector<SpvReflectDescriptorSet*> reflectDescriptorSets() const;
 		std::vector<DescriptorSetDescriptor> createDescriptorSetDescriptors() const;
-
+		vk::ShaderStageFlagBits getShaderStage() const;
+		
 	private:
 		SpvReflectShaderModule module;
 		bool isValid = false;

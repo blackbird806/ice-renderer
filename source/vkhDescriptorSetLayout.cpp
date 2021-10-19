@@ -15,25 +15,22 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 	{
 		for (auto& e : shaderInfo->getDescriptorSetLayoutData())
 		{
-			auto const it = std::find(dsLayoutData.begin(), dsLayoutData.end(), e);
-			if (it != dsLayoutData.end()) // same set is found
-			{
-				// check for similar bindings
-				for (auto& eb : e.bindings)
-				{
-					for (auto& ib : it->bindings)
-					{
-						// if similar binding update shaderstage flags
-						if (eb.binding == ib.binding)
-							ib.stageFlags |= eb.stageFlags;
-					}
-				}
-			}
-			else
-				dsLayoutData.push_back(std::move(e));
+			insertUnique(dsLayoutData, std::move(e));
 		}
 	}
 
+	// set correct shader stages to bindings
+	for (auto& dsLayout : dsLayoutData)
+	{
+		for(auto& binding : dsLayout.bindings)
+		{
+			for (auto const& shaderInfo : shadersInfos)
+			{
+				binding.stageFlags |= shaderInfo->getShaderStage();
+			}
+		}
+	}
+	
 	descriptorSetLayouts.reserve(dsLayoutData.size());
 	for (auto& layoutData : dsLayoutData)
 	{

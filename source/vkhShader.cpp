@@ -425,6 +425,11 @@ std::vector<ShaderReflector::DescriptorSetDescriptor> ShaderReflector::createDes
 	return descriptors;
 }
 
+vk::ShaderStageFlagBits ShaderReflector::getShaderStage() const
+{
+	return static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
+}
+
 void ShaderModule::create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shaderStage_, std::span<uint8> data)
 {
 	vk::ShaderModuleCreateInfo fragmentShaderCreateInfo{};
