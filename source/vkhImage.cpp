@@ -41,11 +41,15 @@ void Image::destroy()
 	}
 }
 
-void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+vk::ImageLayout Image::getLayout() const
 {
+	return imageInfo.initialLayout;
+}
 
+void Image::transitionLayout(vk::ImageLayout newLayout)
+{
 	vk::ImageMemoryBarrier barrier{};
-	barrier.oldLayout = oldLayout;
+	barrier.oldLayout = getLayout();
 	barrier.newLayout = newLayout;
 
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -53,7 +57,7 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 
 	barrier.image = handle;
 	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = miplevel;
+	barrier.subresourceRange.levelCount = imageInfo.mipLevels;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
 
@@ -61,7 +65,7 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 	{
 		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
 
-		if (hasStencilComponent(format))
+		if (hasStencilComponent(imageInfo.format))
 		{
 			barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
 		}
@@ -74,7 +78,7 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 	vk::PipelineStageFlags sourceStage;
 	vk::PipelineStageFlags destinationStage;
 
-	if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
+	if (getLayout() == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal)
 	{
 		barrier.srcAccessMask = vk::AccessFlags();
 		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -82,7 +86,7 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
 		destinationStage = vk::PipelineStageFlagBits::eTransfer;
 	}
-	else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
+	else if (getLayout() == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal)
 	{
 		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
 		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -90,7 +94,7 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 		sourceStage = vk::PipelineStageFlagBits::eTransfer;
 		destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
 	}
-	else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
+	else if (getLayout() == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal)
 	{
 		barrier.srcAccessMask = vk::AccessFlags();
 		barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
@@ -105,6 +109,8 @@ void Image::transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout
 	
 	vkh::SingleTimeCommandBuffer cmd(*deviceContext);
 	cmd->pipelineBarrier(sourceStage, destinationStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+	// update current layout
+	imageInfo.initialLayout = newLayout;
 }
 
 Image::~Image()

@@ -133,7 +133,7 @@ void Texture::create(DeviceContext& ctx, CreateInfo const& info)
 	stagingBufferAllocInfo.usage = vma::MemoryUsage::eCpuToGpu;
 	
 	vkh::Buffer stagingBuffer;
-	stagingBuffer.create(ctx.gpuAllocator, stagingBufferInfo, stagingBufferAllocInfo);
+	stagingBuffer.create(ctx, stagingBufferInfo, stagingBufferAllocInfo);
 	stagingBuffer.writeData(info.data);
 	
 	vk::ImageCreateInfo imageInfo;
@@ -152,5 +152,51 @@ void Texture::create(DeviceContext& ctx, CreateInfo const& info)
 	imageAllocInfo.usage = vma::MemoryUsage::eGpuOnly;
 	
 	image.create(ctx, imageInfo, imageAllocInfo);
-	image.transitionLayout(vk::Format::eR8G8B8A8Srgb, info.mipLevels, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+	image.transitionLayout(vk::ImageLayout::eTransferDstOptimal);
+
+	stagingBuffer.copyToImage(image);
+	
+	vk::ImageViewCreateInfo viewInfo;
+	viewInfo.image = image.handle;
+	viewInfo.viewType = vk::ImageViewType::e2D;
+	viewInfo.format = imageInfo.format;
+	
+	// @Review
+	viewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = info.mipLevels;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+	imageView = ctx.device.createImageViewUnique(viewInfo, ctx.allocationCallbacks);
+
+	vk::SamplerCreateInfo samplerInfo;
+	samplerInfo.magFilter = vk::Filter::eLinear;
+	samplerInfo.minFilter = vk::Filter::eLinear;
+	samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+	samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+	samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16.0f;
+	samplerInfo.borderColor = vk::BorderColor::eFloatOpaqueBlack;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = vk::CompareOp::eAlways;
+	samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = static_cast<float>(info.mipLevels);
+
+	sampler = ctx.device.createSamplerUnique(samplerInfo, ctx.allocationCallbacks);
+}
+
+void Texture::destroy()
+{
+	image.destroy();
+	imageView.reset();
+	sampler.reset();
+}
+
+Texture::~Texture()
+{
+	destroy();
 }

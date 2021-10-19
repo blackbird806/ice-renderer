@@ -24,8 +24,7 @@ namespace vkh
 		void destroy();
 		~ShaderReflector();
 
-		// @TODO Rename
-		struct DescriptorSetDescriptor
+		struct ReflectedDescriptorSet
 		{
 			struct Member;
 			struct Struct
@@ -93,7 +92,7 @@ namespace vkh
 		[[nodiscard]] std::vector<ShaderReflector::DescriptorSetLayoutData> getDescriptorSetLayoutData() const;
 
 		std::vector<SpvReflectDescriptorSet*> reflectDescriptorSets() const;
-		std::vector<DescriptorSetDescriptor> createDescriptorSetDescriptors() const;
+		std::vector<ReflectedDescriptorSet> createRefleCreateDescriptorSet() const;
 		vk::ShaderStageFlagBits getShaderStage() const;
 		
 	private:
@@ -103,14 +102,13 @@ namespace vkh
 
 	struct ShaderModule
 	{
-		void create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shaderStage, std::span<uint8> data);
+		void create(vkh::DeviceContext& ctx, std::span<uint8> data);
 		void destroy();
 
 		vk::PipelineShaderStageCreateInfo getPipelineShaderStage() const;
 
 		vk::UniqueShaderModule module;
 		ShaderReflector reflector;
-		vk::ShaderStageFlagBits shaderStage;
 	};
 	
 }

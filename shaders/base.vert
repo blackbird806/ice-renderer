@@ -7,7 +7,7 @@ layout(set = 0, binding = 0) uniform FrameConstants {
 };
 
 // updated once per drawcall
-layout(set = 2, binding = 0) uniform Drawcall {
+layout(set = 3, binding = 0) uniform Drawcall {
     mat4 model;
 };
 

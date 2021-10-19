@@ -14,7 +14,9 @@ namespace vkh
 
 		void destroy();
 
-		void transitionLayout(vk::Format format, uint32 miplevel, vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
+		vk::ImageLayout getLayout() const;
+		
+		void transitionLayout(vk::ImageLayout newLayout);
 		
 		~Image();
 		

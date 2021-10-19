@@ -45,7 +45,7 @@ ShaderReflector::~ShaderReflector()
 	destroy();
 }
 
-size_t ShaderReflector::DescriptorSetDescriptor::Struct::getSize() const
+size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
 {
 	size_t sum = 0;
 	for (auto const& member : members)
@@ -53,7 +53,7 @@ size_t ShaderReflector::DescriptorSetDescriptor::Struct::getSize() const
 	return sum;
 }
 
-size_t ShaderReflector::DescriptorSetDescriptor::Member::getSize() const
+size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 {
 	return std::visit(overloaded{
 	[](auto&& e)
@@ -306,9 +306,9 @@ std::vector<SpvReflectDescriptorSet*> ShaderReflector::reflectDescriptorSets() c
 }
 
 // @Improve only float are supported for now
-static ShaderReflector::DescriptorSetDescriptor::Member reflectMember(SpvReflectTypeDescription const& typeDescription)
+static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectTypeDescription const& typeDescription)
 {
-	ShaderReflector::DescriptorSetDescriptor::Member mem;
+	ShaderReflector::ReflectedDescriptorSet::Member mem;
 	if (typeDescription.struct_member_name != nullptr)
 		mem.name = typeDescription.struct_member_name;
 	mem.typeFlags = typeDescription.type_flags;
@@ -382,7 +382,7 @@ static ShaderReflector::DescriptorSetDescriptor::Member reflectMember(SpvReflect
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT)
 	{
 		// @Review ugly code right here
-		ShaderReflector::DescriptorSetDescriptor::Struct struct_;
+		ShaderReflector::ReflectedDescriptorSet::Struct struct_;
 		for (int j_member = 0; j_member < typeDescription.member_count; j_member++)
 		{
 			struct_.members.emplace_back(reflectMember(typeDescription.members[j_member]));
@@ -395,23 +395,23 @@ static ShaderReflector::DescriptorSetDescriptor::Member reflectMember(SpvReflect
 	return mem;
 }
 
-static ShaderReflector::DescriptorSetDescriptor::Binding reflectDescriptorBinding(SpvReflectDescriptorBinding const& reflBinding)
+static ShaderReflector::ReflectedDescriptorSet::Binding reflectDescriptorBinding(SpvReflectDescriptorBinding const& reflBinding)
 {
-	ShaderReflector::DescriptorSetDescriptor::Binding binding;
+	ShaderReflector::ReflectedDescriptorSet::Binding binding;
 	binding.descriptorType = reflBinding.descriptor_type;
 	binding.element = reflectMember(*reflBinding.type_description);
-	if (!std::holds_alternative<ShaderReflector::DescriptorSetDescriptor::Struct>(binding.element.value))
+	if (!std::holds_alternative<ShaderReflector::ReflectedDescriptorSet::Struct>(binding.element.value))
 		binding.element.name = reflBinding.name;
 	return binding;
 }
 
-std::vector<ShaderReflector::DescriptorSetDescriptor> ShaderReflector::createDescriptorSetDescriptors() const
+std::vector<ShaderReflector::ReflectedDescriptorSet> ShaderReflector::createRefleCreateDescriptorSet() const
 {
-	std::vector<DescriptorSetDescriptor> descriptors;
+	std::vector<ReflectedDescriptorSet> descriptors;
 	auto const sets = reflectDescriptorSets();
 	for (uint setNum = 0; auto const& set : sets)
 	{
-		ShaderReflector::DescriptorSetDescriptor desc;
+		ShaderReflector::ReflectedDescriptorSet desc;
 		for (uint32_t i_binding = 0; i_binding < set->binding_count; ++i_binding)
 		{
 			const SpvReflectDescriptorBinding& refl_binding = *(set->bindings[i_binding]);
@@ -430,12 +430,11 @@ vk::ShaderStageFlagBits ShaderReflector::getShaderStage() const
 	return static_cast<vk::ShaderStageFlagBits>(module.shader_stage);
 }
 
-void ShaderModule::create(vkh::DeviceContext& ctx, vk::ShaderStageFlagBits shaderStage_, std::span<uint8> data)
+void ShaderModule::create(vkh::DeviceContext& ctx, std::span<uint8> data)
 {
 	vk::ShaderModuleCreateInfo fragmentShaderCreateInfo{};
 	fragmentShaderCreateInfo.codeSize = data.size();
 	fragmentShaderCreateInfo.pCode = reinterpret_cast<uint32_t const*>(data.data());
-	shaderStage = shaderStage_;
 	
 	module = ctx.device.createShaderModuleUnique(fragmentShaderCreateInfo, ctx.allocationCallbacks);
 	reflector.create(data);
@@ -450,7 +449,7 @@ void ShaderModule::destroy()
 vk::PipelineShaderStageCreateInfo ShaderModule::getPipelineShaderStage() const
 {
 	vk::PipelineShaderStageCreateInfo pipelineShaderStageCreateInfo{};
-	pipelineShaderStageCreateInfo.stage = shaderStage;
+	pipelineShaderStageCreateInfo.stage = reflector.getShaderStage();
 	pipelineShaderStageCreateInfo.module = *module;
 	pipelineShaderStageCreateInfo.pName = "main";
 	

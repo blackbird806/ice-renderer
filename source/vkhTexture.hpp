@@ -19,15 +19,17 @@ namespace vkh
 			std::span<uint8> data;
 		};
 		
+		Texture() = default;
+		
 		void create(DeviceContext& ctx, CreateInfo const&);
 		void destroy();
+		~Texture();
 
 		Texture(Texture&& rhs) noexcept;
 		Texture& operator=(Texture&& rhs) noexcept;
 		
-		// TODO
 		vkh::Image image;
-		vk::ImageView imageView;
-		vk::Sampler sampler;
+		vk::UniqueImageView imageView;
+		vk::UniqueSampler sampler;
 	};
 }

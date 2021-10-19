@@ -12,7 +12,7 @@ namespace vkh
 	enum DescriptorSetIndex : size_t
 	{
 		PipelineConstants = 0,
-		//Textures,
+		Textures,
 		Material,
 		DrawCall,
 
@@ -27,7 +27,7 @@ namespace vkh
 
 		void destroy();
 
-		std::vector<ShaderReflector::DescriptorSetDescriptor> descriptorsDescriptors;
+		std::vector<ShaderReflector::ReflectedDescriptorSet> reflectedDescriptors;
 		
 		LayoutBindings_t layoutBindings;
 		std::unordered_map<DescriptorSetIndex, vk::UniqueDescriptorSetLayout> descriptorSetLayouts;

@@ -165,9 +165,12 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 	descriptorSetLayouts.reserve(dsLayout.descriptorSetLayouts.size());
 
-	for (auto const& [_, d] : dsLayout.descriptorSetLayouts)
-		descriptorSetLayouts.push_back(*d);
-	
+	// add descriptor sets in descriptorSetLayouts in the right set order
+	for (int i =0; i < dsLayout.descriptorSetLayouts.size(); i++)
+	{
+		descriptorSetLayouts.push_back(*dsLayout.descriptorSetLayouts[(DescriptorSetIndex)i]);
+	}
+
 	// Create pipeline layout
 	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.setLayoutCount = std::size(descriptorSetLayouts);

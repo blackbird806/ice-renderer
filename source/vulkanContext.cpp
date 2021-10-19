@@ -6,7 +6,6 @@
 #include "vkhUtility.hpp"
 #include "mesh.hpp"
 
-
 VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 {
 	const char* validationLayers[] = { "VK_LAYER_KHRONOS_validation" };
@@ -21,11 +20,11 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 
 	auto const fragSpv = readBinFile("shaders/frag.spv");
 	vkh::ShaderModule fragmentShader;
-	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eFragment, toSpan<uint8>(fragSpv));
+	fragmentShader.create(deviceContext, toSpan<uint8>(fragSpv));
 	auto const vertSpv = readBinFile("shaders/vert.spv");
 	
 	vkh::ShaderModule vertexShader;
-	vertexShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
+	vertexShader.create(deviceContext, toSpan<uint8>(vertSpv));
 	
 	vk::Format const colorFormat = swapchain.format;
 	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
@@ -237,11 +236,11 @@ void VulkanContext::recreateSwapchain()
 
 	auto const fragSpv = readBinFile("shaders/frag.spv");
 	vkh::ShaderModule fragmentShader;
-	fragmentShader.create(deviceContext, vk::ShaderStageFlagBits::eFragment, toSpan<uint8>(fragSpv));
+	fragmentShader.create(deviceContext, toSpan<uint8>(fragSpv));
 
 	auto const vertSpv = readBinFile("shaders/vert.spv");
 	vkh::ShaderModule vertexShader;
-	vertexShader.create(deviceContext, vk::ShaderStageFlagBits::eVertex, toSpan<uint8>(vertSpv));
+	vertexShader.create(deviceContext, toSpan<uint8>(vertSpv));
 
 	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
 		.vertexShader = std::move(vertexShader),

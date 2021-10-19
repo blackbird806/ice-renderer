@@ -1,10 +1,16 @@
 #include <GLFW/glfw3.h>
 
+#include <stb/stb_image.h>
+
 #include "vulkanContext.hpp"
 #include "mesh.hpp"
 #include "material.hpp"
 #include "GUILayer.hpp"
+#include "vkhTexture.hpp"
 #include "imgui/imgui.h"
+
+#undef min
+#undef max
 
 static void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 	auto& vkContext = *static_cast<VulkanContext*>(glfwGetWindowUserPointer(window));
@@ -30,6 +36,27 @@ int main()
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
 
+	int texWidth, texHeight, texChannels;
+	stbi_uc* pixels = stbi_load("assets/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+	if (!pixels)
+		throw std::runtime_error("failed to load texture image!");
+	
+	vk::DeviceSize const imageSize = texWidth * texHeight * 4;
+
+	vkh::Texture text;
+	vkh::Texture::CreateInfo textureInfo;
+	textureInfo.format = vk::Format::eR8G8B8A8Srgb;
+	textureInfo.tiling = vk::ImageTiling::eOptimal;
+	textureInfo.mipLevels = 1;// static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	textureInfo.data = std::span(pixels, imageSize);
+	textureInfo.width = texWidth;
+	textureInfo.height = texHeight;
+	text.create(context.deviceContext, textureInfo);
+	text.image.transitionLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	stbi_image_free(pixels);
+
 	struct FrameConstants
 	{
 		glm::mat4 view;
@@ -48,11 +75,12 @@ int main()
 		bufferCreateInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 		bufferCreateInfo.size = sizeof(FrameConstants);
 		bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-		frameConstantsBuffer.create(context.deviceContext.gpuAllocator, bufferCreateInfo, allocInfo);
+		frameConstantsBuffer.create(context.deviceContext, bufferCreateInfo, allocInfo);
 		frameConstantsBuffer.writeStruct(frameConstants);
 	}
 
 	auto frameSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::PipelineConstants, context.maxFramesInFlight);
+	auto textureSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Textures, context.maxFramesInFlight);
 	auto modelSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 
 	for (auto& set : modelSets)
@@ -69,6 +97,24 @@ int main()
 		descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
+	}
+
+	for (auto& set : textureSets)
+	{
+		vk::DescriptorImageInfo imageInfo{};
+		imageInfo.sampler = *text.sampler;
+		imageInfo.imageView = *text.imageView;
+		imageInfo.imageLayout = text.image.getLayout();
+		
+		vk::WriteDescriptorSet descriptorWrites[1];
+		descriptorWrites[0].dstSet = set;
+		descriptorWrites[0].dstBinding = 0;
+		descriptorWrites[0].dstArrayElement = 0;
+		descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrites[0].descriptorCount = 1;
+		descriptorWrites[0].pImageInfo = &imageInfo;
 
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
@@ -146,10 +192,16 @@ int main()
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
-			vk::DescriptorSet sets1[] = { frameSets[context.currentFrame],  mtrl.descriptorSets[context.currentFrame] };
-			vk::DescriptorSet sets2[] = { modelSets[context.currentFrame] };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets1), sets1, 0, nullptr);
+
+			vk::DescriptorSet sets0[] = { frameSets[context.currentFrame] };
+			vk::DescriptorSet sets1[] = { textureSets[context.currentFrame] };
+			vk::DescriptorSet sets2[] = { mtrl.descriptorSets[context.currentFrame] };
+			vk::DescriptorSet sets3[] = { modelSets[context.currentFrame] };
+		
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets0), sets0, 0, nullptr);
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
 			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
 			mesh.draw(cmdBuffer, context.currentFrame);
 
 		cmdBuffer.endRenderPass();
