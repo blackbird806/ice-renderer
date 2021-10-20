@@ -17,6 +17,11 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 		{
 			insertUnique(dsLayoutData, std::move(e));
 		}
+
+		for (auto& reflectedSet : shaderInfo->createReflectedDescriptorSet())
+		{
+			insertUnique(reflectedDescriptors, std::move(reflectedSet));
+		}
 	}
 
 	// set correct shader stages to bindings
@@ -40,6 +45,7 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 		descriptorSetLayouts.emplace(static_cast<DescriptorSetIndex>(layoutData.set_number),
 			deviceContext->device.createDescriptorSetLayoutUnique(layoutData.create_info));
 	}
+	
 }
 
 void ShaderDescriptorLayout::destroy()

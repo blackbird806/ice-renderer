@@ -13,6 +13,8 @@ namespace vkh
 {
 	struct DeviceContext;
 
+	static size_t constexpr uniformBufferAllignement = 16;
+	
 	class ShaderReflector
 	{
 	public:
@@ -30,6 +32,7 @@ namespace vkh
 			struct Struct
 			{
 				size_t getSize() const;
+				size_t getAlignedSize() const;
 
 				std::string name;
 				std::vector<Member> members;
@@ -54,7 +57,8 @@ namespace vkh
 				>;
 
 				size_t getSize() const;
-				
+				size_t getAlignedSize() const;
+
 				std::string name;
 				SpvReflectTypeFlags typeFlags = 0;
 				SpvReflectArrayTraits arrayTraits{};
@@ -69,6 +73,8 @@ namespace vkh
 				SpvReflectDescriptorType descriptorType;
 			};
 
+			bool operator==(ReflectedDescriptorSet const& rhs) const;
+			
 			uint setNumber;
 			std::vector<Binding> bindings;
 		};
@@ -91,11 +97,12 @@ namespace vkh
 		[[nodiscard]] VertexDescription getVertexDescriptions() const; 
 		[[nodiscard]] std::vector<ShaderReflector::DescriptorSetLayoutData> getDescriptorSetLayoutData() const;
 
-		std::vector<SpvReflectDescriptorSet*> reflectDescriptorSets() const;
-		std::vector<ReflectedDescriptorSet> createRefleCreateDescriptorSet() const;
+		std::vector<ReflectedDescriptorSet> createReflectedDescriptorSet() const;
 		vk::ShaderStageFlagBits getShaderStage() const;
 		
 	private:
+		
+		std::vector<SpvReflectDescriptorSet*> reflectDescriptorSets() const;
 		SpvReflectShaderModule module;
 		bool isValid = false;
 	};

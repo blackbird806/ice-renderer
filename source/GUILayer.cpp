@@ -90,7 +90,7 @@ static vk::UniqueRenderPass createDefaultRenderPassMSAAImgui(vkh::DeviceContext&
 void GUILayer::init(VulkanContext& vkContext)
 {
 	auto const& device = vkContext.deviceContext.device;
-	auto const& window = vkContext.window;
+	auto* window = vkContext.window;
 
 	// the size of the pool is very oversize, but it's copied from imgui demo itself.
 	VkDescriptorPoolSize pool_sizes[] =

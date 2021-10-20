@@ -12,3 +12,6 @@ x86
 x64
 *.spv
 imgui.ini
+*.plan
+Architecture.*
+arch.jpg

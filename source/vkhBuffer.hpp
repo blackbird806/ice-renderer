@@ -8,6 +8,9 @@
 
 namespace vkh
 {
+	struct DeviceContext;
+	struct Image;
+
 	class Buffer
 	{
 		
@@ -20,7 +23,7 @@ namespace vkh
 		
 		ICE_NON_COPYABLE_CLASS(Buffer)
 		
-		void create(vma::Allocator gpuAlloc, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo);
+		void create(vkh::DeviceContext& ctx, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo);
 		
 		void destroy();
 
@@ -34,12 +37,14 @@ namespace vkh
 		{
 			writeData({ reinterpret_cast<uint8*>(&struct_), sizeof(T) });
 		}
+
+		void copyToImage(vkh::Image& img);
 		
 		~Buffer();
 		
 		vk::Buffer buffer;
 		vma::Allocation allocation;
-		vma::Allocator gpuAllocator;
+		vkh::DeviceContext* deviceContext;
 		vk::DeviceSize size;
 	};
 }

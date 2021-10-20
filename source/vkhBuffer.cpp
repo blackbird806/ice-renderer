@@ -1,4 +1,7 @@
 #include "vkhBuffer.hpp"
+#include "vkhImage.hpp"
+
+#include "vkhCommandBuffers.hpp"
 
 using namespace vkh;
 
@@ -17,11 +20,11 @@ Buffer& Buffer::operator=(Buffer&& rhs) noexcept
 }
 
 // @TODO handle buffer creation with staging buffer
-void Buffer::create(vma::Allocator gpuAlloc, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo)
+void Buffer::create(vkh::DeviceContext& ctx, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo)
 {
-	gpuAllocator = gpuAlloc;
+	deviceContext = &ctx;
 	
-	vk::Result res = gpuAllocator.createBuffer(&bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+	vk::Result res = ctx.gpuAllocator.createBuffer(&bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
 	size = bufferInfo.size;
 	if (res != vk::Result::eSuccess)
 	{
@@ -33,7 +36,7 @@ void Buffer::destroy()
 {
 	if (buffer)
 	{
-		gpuAllocator.destroyBuffer(buffer, allocation);
+		deviceContext->gpuAllocator.destroyBuffer(buffer, allocation);
 		buffer = vk::Buffer();
 	}
 }
@@ -41,12 +44,12 @@ void Buffer::destroy()
 	// @Review persistent mapped memory ?
 void* Buffer::map()
 {
-	return gpuAllocator.mapMemory(allocation);
+	return deviceContext->gpuAllocator.mapMemory(allocation);
 }
 
 void Buffer::unmap()
 {
-	gpuAllocator.unmapMemory(allocation);
+	deviceContext->gpuAllocator.unmapMemory(allocation);
 }
 
 void Buffer::writeData(std::span<uint8> data)
@@ -56,6 +59,26 @@ void Buffer::writeData(std::span<uint8> data)
 	void* mapped = map();
 		memcpy(mapped, data.data(), data.size_bytes());
 	unmap();
+}
+
+void Buffer::copyToImage(vkh::Image& img)
+{
+	vkh::SingleTimeCommandBuffer cmd(*deviceContext);
+
+	vk::BufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+
+	region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = img.imageInfo.arrayLayers;
+
+	region.imageOffset = vk::Offset3D{ 0, 0, 0 };
+	region.imageExtent = img.imageInfo.extent;
+
+	cmd->copyBufferToImage(buffer, img.handle, vk::ImageLayout::eTransferDstOptimal, { region });
 }
 
 Buffer::~Buffer()

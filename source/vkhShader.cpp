@@ -53,6 +53,20 @@ size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
 	return sum;
 }
 
+size_t ShaderReflector::ReflectedDescriptorSet::Member::getAlignedSize() const
+{
+	size_t const size = getSize();
+	//return (size + uniformBufferAllignement - 1) & ~(uniformBufferAllignement - 1);
+	return size;
+}
+
+size_t ShaderReflector::ReflectedDescriptorSet::Struct::getAlignedSize() const
+{
+	size_t const size = getSize();
+	//return (size + uniformBufferAllignement - 1) & ~(uniformBufferAllignement - 1);
+	return size;
+}
+
 size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 {
 	return std::visit(overloaded{
@@ -66,6 +80,11 @@ size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 	}
 	}, value);
 	return 0;
+}
+
+bool ShaderReflector::ReflectedDescriptorSet::operator==(ReflectedDescriptorSet const& rhs) const
+{
+	return setNumber == rhs.setNumber;
 }
 
 // Returns the size in bytes of the provided VkFormat.
@@ -405,7 +424,7 @@ static ShaderReflector::ReflectedDescriptorSet::Binding reflectDescriptorBinding
 	return binding;
 }
 
-std::vector<ShaderReflector::ReflectedDescriptorSet> ShaderReflector::createRefleCreateDescriptorSet() const
+std::vector<ShaderReflector::ReflectedDescriptorSet> ShaderReflector::createReflectedDescriptorSet() const
 {
 	std::vector<ReflectedDescriptorSet> descriptors;
 	auto const sets = reflectDescriptorSets();

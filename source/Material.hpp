@@ -1,5 +1,5 @@
 #pragma once
-#include <unordered_map>
+
 #include <vector>
 #include <vulkan/vulkan.hpp>
 
@@ -14,10 +14,13 @@ namespace vkh {
 //@Review material builder ?
 struct Material
 {
-	void create(vkh::DeviceContext& deviceContext);
+	void create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline);
 
 	size_t getUniformBufferSize() const noexcept;
+
+	void imguiEditor();
 	
+	void updateMember(void* bufferData, size_t& offset, vkh::ShaderReflector::ReflectedDescriptorSet::Member const& mem);
 	void updateBuffer();
 	
 	void bind(vk::CommandBuffer cmdBuffer, uint32 index);

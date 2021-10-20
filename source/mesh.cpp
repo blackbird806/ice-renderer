@@ -103,7 +103,7 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 
 		vma::AllocationCreateInfo allocInfo;
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		vertexBuffer.create(ctx.gpuAllocator, vertexBufferInfo, allocInfo);
+		vertexBuffer.create(ctx, vertexBufferInfo, allocInfo);
 		vertexBuffer.writeData(toSpan<uint8>(mesh.vertices));
 	}
 	{
@@ -114,7 +114,7 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 
 		vma::AllocationCreateInfo allocInfo;
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		indexBuffer.create(ctx.gpuAllocator, indexBufferInfo, allocInfo);
+		indexBuffer.create(ctx, indexBufferInfo, allocInfo);
 		indexBuffer.writeData(toSpan<uint8>(mesh.indices));
 		indicesCount = mesh.indices.size();
 	}
@@ -126,7 +126,7 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 
 		vma::AllocationCreateInfo allocInfo;
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		modelBuffer.create(ctx.gpuAllocator, uniformBufferInfo, allocInfo);
+		modelBuffer.create(ctx, uniformBufferInfo, allocInfo);
 		
 		// @TODO
 		glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));

@@ -21,15 +21,12 @@ namespace vkh
 	
 	struct ShaderDescriptorLayout
 	{
-		using LayoutBindings_t = std::array<std::vector<vk::DescriptorSetLayoutBinding>, MaxSets>;
-		
 		void create(vkh::DeviceContext& ctx, std::span<ShaderReflector const*> shadersInfos);
 
 		void destroy();
 
 		std::vector<ShaderReflector::ReflectedDescriptorSet> reflectedDescriptors;
 		
-		LayoutBindings_t layoutBindings;
 		std::unordered_map<DescriptorSetIndex, vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
 		DeviceContext* deviceContext;
 	};
