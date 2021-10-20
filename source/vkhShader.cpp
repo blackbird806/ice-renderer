@@ -53,20 +53,6 @@ size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
 	return sum;
 }
 
-size_t ShaderReflector::ReflectedDescriptorSet::Member::getAlignedSize() const
-{
-	size_t const size = getSize();
-	//return (size + uniformBufferAllignement - 1) & ~(uniformBufferAllignement - 1);
-	return size;
-}
-
-size_t ShaderReflector::ReflectedDescriptorSet::Struct::getAlignedSize() const
-{
-	size_t const size = getSize();
-	//return (size + uniformBufferAllignement - 1) & ~(uniformBufferAllignement - 1);
-	return size;
-}
-
 size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 {
 	return std::visit(overloaded{

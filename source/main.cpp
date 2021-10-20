@@ -29,7 +29,7 @@ int main()
 
 	GUILayer gui;
 	gui.init(context);
-	context.onSwapchainRecreate = [&context, &gui]()
+	context.onSwapchainRecreate = [&context, &gui] ()
 	{
 		gui.handleSwapchainRecreation(context);
 	};
@@ -48,7 +48,7 @@ int main()
 	vkh::Texture::CreateInfo textureInfo;
 	textureInfo.format = vk::Format::eR8G8B8A8Srgb;
 	textureInfo.tiling = vk::ImageTiling::eOptimal;
-	textureInfo.mipLevels = 1;// static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	textureInfo.mipLevels = 1; // static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 	textureInfo.data = std::span(pixels, imageSize);
 	textureInfo.width = texWidth;
 	textureInfo.height = texHeight;
@@ -57,6 +57,26 @@ int main()
 
 	stbi_image_free(pixels);
 
+	pixels = stbi_load("assets/grass.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+	if (!pixels)
+		throw std::runtime_error("failed to load texture image!");
+
+	vk::DeviceSize const imageSize2 = texWidth * texHeight * 4;
+
+	vkh::Texture text2;
+	vkh::Texture::CreateInfo textureInfo2;
+	textureInfo2.format = vk::Format::eR8G8B8A8Srgb;
+	textureInfo2.tiling = vk::ImageTiling::eOptimal;
+	textureInfo2.mipLevels = 1; // static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	textureInfo2.data = std::span(pixels, imageSize2);
+	textureInfo2.width = texWidth;
+	textureInfo2.height = texHeight;
+	text2.create(context.deviceContext, textureInfo2);
+	text2.image.transitionLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+	stbi_image_free(pixels);
+	
 	struct FrameConstants
 	{
 		glm::mat4 view;
@@ -101,25 +121,35 @@ int main()
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
 
+	size_t constexpr maxTextures = 64;
+
+	vk::DescriptorImageInfo imageInfo{};
+	imageInfo.sampler = *text.sampler;
+	imageInfo.imageView = *text.imageView;
+	imageInfo.imageLayout = text.image.getLayout();
+
+	vk::DescriptorImageInfo imageInfo2{};
+	imageInfo2.sampler = *text2.sampler;
+	imageInfo2.imageView = *text2.imageView;
+	imageInfo2.imageLayout = text2.image.getLayout();
+	
+	std::vector<vk::DescriptorImageInfo> imageInfos(maxTextures, imageInfo);
+	imageInfos[1] = imageInfo2;
+	
 	for (auto& set : textureSets)
 	{
-		vk::DescriptorImageInfo imageInfo{};
-		imageInfo.sampler = *text.sampler;
-		imageInfo.imageView = *text.imageView;
-		imageInfo.imageLayout = text.image.getLayout();
-		
 		vk::WriteDescriptorSet descriptorWrites[1];
 		descriptorWrites[0].dstSet = set;
 		descriptorWrites[0].dstBinding = 0;
 		descriptorWrites[0].dstArrayElement = 0;
 		descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		descriptorWrites[0].descriptorCount = 1;
-		descriptorWrites[0].pImageInfo = &imageInfo;
+		descriptorWrites[0].descriptorCount = imageInfos.size();
+		descriptorWrites[0].pImageInfo = imageInfos.data();
 
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
 	
-	for (auto& set : frameSets)
+	for (auto& set : frameSets)	
 	{
 		vk::DescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = frameConstantsBuffer.buffer;
@@ -138,13 +168,6 @@ int main()
 	}
 
 	Material mtrl;
-	float brightness = 1.0f;
-	glm::vec3 color{ 1.0f, 1.0f, 1.0f };
-	//mtrl.parameters.push_back({ "brightness", 0, {}, brightness });
-	//mtrl.parameters.push_back({ "a", 0, {}, 0.0f });
-	//mtrl.parameters.push_back({ "b", 0, {}, 0.0f });
-	//mtrl.parameters.push_back({ "c", 0, {}, 0.0f });
-	//mtrl.parameters.push_back({ "color", 0, {}, color });
 	mtrl.create(context.deviceContext, context.defaultPipeline);
 	mtrl.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Material, context.maxFramesInFlight);
 	mtrl.updateBuffer();
@@ -169,20 +192,6 @@ int main()
 		mtrl.imguiEditor();
 		mtrl.updateBuffer();
 
-		//if (ImGui::DragFloat("brightness", &brightness, 0.01f, 0.0f, 1.0f))
-		//{
-		//	mtrl.parameters[0].value = brightness;
-		//	mtrl.updateBuffer();
-		//}
-
-		//float* data = (float*)mtrl.uniformBuffer.map();
-		//if (ImGui::ColorEdit3("color", &data[4]))
-		//{
-		//	
-		//	//mtrl.updateBuffer();
-		//}
-		//mtrl.uniformBuffer.unmap();
-		
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = *context.defaultRenderPass;
 		renderPassInfo.framebuffer = *context.framebuffers[context.currentFrame];

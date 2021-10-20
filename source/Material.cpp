@@ -5,6 +5,8 @@
 #include "imgui/imgui.h"
 #include "utility.hpp"
 
+// @REVIEW Material impl
+
 void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline)
 {
 	graphicsPipeline = &pipeline;
@@ -42,6 +44,7 @@ size_t Material::getUniformBufferSize() const noexcept
 	return bufferSize;
 }
 
+// @Review redo a proper architecture and clean code
 struct ImguiMaterialVisitor
 {
 	void operator()(float f)
@@ -49,6 +52,15 @@ struct ImguiMaterialVisitor
 		if (ImGui::DragFloat(param.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
 		{
 			param.value = f;
+		}
+	}
+
+	void operator()(uint32 f)
+	{
+		int32 i = (uint32)f;
+		if (ImGui::InputInt(param.name.c_str(), &i))
+		{
+			param.value = (uint32)i;
 		}
 	}
 
@@ -101,9 +113,9 @@ void Material::updateMember(void* bufferData, size_t& offset, vkh::ShaderReflect
 	}
 	else
 	{
-		size_t const alignedSize = mem.getAlignedSize();
-		memcpy((uint8*)bufferData + offset, &mem.value, alignedSize);
-		offset += alignedSize;
+		size_t const size = mem.getSize();
+		memcpy((uint8*)bufferData + offset, &mem.value, size);
+		offset += size;
 	}
 }
 

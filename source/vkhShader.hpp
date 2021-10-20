@@ -26,13 +26,13 @@ namespace vkh
 		void destroy();
 		~ShaderReflector();
 
+		// @Review @Improve clean shader reflection
 		struct ReflectedDescriptorSet
 		{
 			struct Member;
 			struct Struct
 			{
 				size_t getSize() const;
-				size_t getAlignedSize() const;
 
 				std::string name;
 				std::vector<Member> members;
@@ -57,7 +57,6 @@ namespace vkh
 				>;
 
 				size_t getSize() const;
-				size_t getAlignedSize() const;
 
 				std::string name;
 				SpvReflectTypeFlags typeFlags = 0;
