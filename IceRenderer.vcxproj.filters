@@ -101,10 +101,10 @@
     <ClCompile Include="source\imguiThemes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\pipelineBatch.cpp">
+    <ClCompile Include="source\vkhTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\vkhTexture.cpp">
+    <ClCompile Include="source\scenegraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -166,10 +166,10 @@
     <ClInclude Include="source\engine.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\pipelineBatch.hpp">
+    <ClInclude Include="source\renderObject.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\renderObject.hpp">
+    <ClInclude Include="source\scenegraph.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

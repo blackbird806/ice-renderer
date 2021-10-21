@@ -48,6 +48,7 @@ int main()
 	vkh::Texture::CreateInfo textureInfo;
 	textureInfo.format = vk::Format::eR8G8B8A8Srgb;
 	textureInfo.tiling = vk::ImageTiling::eOptimal;
+	// @TODO mipmaps
 	textureInfo.mipLevels = 1; // static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 	textureInfo.data = std::span(pixels, imageSize);
 	textureInfo.width = texWidth;
@@ -186,7 +187,7 @@ int main()
 		
 		gui.startFrame();
 		auto cmdBuffer = context.commandBuffers.begin(context.currentFrame);
-
+		
 		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
 
 		mtrl.imguiEditor();

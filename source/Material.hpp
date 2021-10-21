@@ -32,5 +32,5 @@ struct Material
 	std::vector<vkh::ShaderReflector::ReflectedDescriptorSet::Member> parameters;
 	
 	std::vector<vk::DescriptorSet> descriptorSets;
-	vkh::Buffer uniformBuffer;
+	vkh::Buffer uniformBuffer; // To remove
 };

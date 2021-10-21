@@ -10,7 +10,8 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 {
 	deviceContext = &ctx;
 	std::vector<ShaderReflector::DescriptorSetLayoutData> dsLayoutData;
-	
+
+	// correctly merge shaders descriptor sets
 	for (auto const& shaderInfo : shadersInfos)
 	{
 		for (auto& e : shaderInfo->getDescriptorSetLayoutData())
