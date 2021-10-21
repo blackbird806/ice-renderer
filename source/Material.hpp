@@ -23,14 +23,12 @@ struct Material
 	void updateMember(void* bufferData, size_t& offset, vkh::ShaderReflector::ReflectedDescriptorSet::Member const& mem);
 	void updateBuffer();
 	
-	void bind(vk::CommandBuffer cmdBuffer, uint32 index);
-	
 	void updateDescriptorSets();
 	
-	vkh::GraphicsPipeline* graphicsPipeline;
+	vkh::GraphicsPipeline* graphicsPipeline; // To remove ?
 
 	std::vector<vkh::ShaderReflector::ReflectedDescriptorSet::Member> parameters;
 	
 	std::vector<vk::DescriptorSet> descriptorSets;
-	vkh::Buffer uniformBuffer; // To remove
+	vkh::Buffer uniformBuffer; // TODO set big material buffer in pipeline batch
 };

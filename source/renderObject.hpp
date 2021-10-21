@@ -2,8 +2,9 @@
 
 #include "ice.hpp"
 
-class RenderObject
+struct RenderObject
 {
-	uint32 meshID;
+	uint32 pipelineID;
 	uint32 materialID;
+	uint32 meshID;
 };

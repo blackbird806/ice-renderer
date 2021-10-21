@@ -54,11 +54,13 @@ class Mesh : RenderObject
 public:
 	Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh);
 
-	void draw(vk::CommandBuffer cmdBuff, uint32);
+	void draw(vk::CommandBuffer cmdBuff);
 
 	size_t indicesCount;
 	
 	vkh::Buffer vertexBuffer;
 	vkh::Buffer indexBuffer;
+
 	vkh::Buffer modelBuffer;
+	vk::DescriptorSet modelSet;
 };

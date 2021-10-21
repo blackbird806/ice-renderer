@@ -136,7 +136,7 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 	
 }
 
-void Mesh::draw(vk::CommandBuffer cmdBuff, uint32 index)
+void Mesh::draw(vk::CommandBuffer cmdBuff)
 {
 	vk::DeviceSize offsets[] = { 0 };
 	vk::Buffer vertexBuffers[] = { vertexBuffer.buffer };

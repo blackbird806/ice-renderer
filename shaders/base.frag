@@ -4,10 +4,8 @@ layout(set = 1, binding = 0) uniform sampler2D albedoSamplers[64];
 
 // updated once per Material "bucket"
 layout(set = 2, binding = 0) uniform Material {
-    float brightness;
-    float padding_1, padding_2, padding_3;
     vec3 color;
-    float padding_4;
+    float padding_0;
     int albedoId;
 };
 
@@ -18,5 +16,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
-    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(color, 1.0f) * brightness;
+    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(color, 1.0f);
 }

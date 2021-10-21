@@ -6,7 +6,7 @@
 using namespace vkh;
 
 Buffer::Buffer(Buffer&& rhs) noexcept :
-	buffer(rhs.buffer)
+	buffer(rhs.buffer), allocation(rhs.allocation), deviceContext(rhs.deviceContext), size(rhs.size)
 {
 	rhs.buffer = vk::Buffer();
 }
@@ -15,6 +15,9 @@ Buffer& Buffer::operator=(Buffer&& rhs) noexcept
 {
 	destroy();
 	buffer = rhs.buffer;
+	allocation = rhs.allocation;
+	deviceContext = rhs.deviceContext;
+	size = rhs.size;
 	rhs.buffer = vk::Buffer();
 	return *this;
 }

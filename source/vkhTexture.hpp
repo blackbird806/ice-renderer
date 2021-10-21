@@ -25,8 +25,8 @@ namespace vkh
 		void destroy();
 		~Texture();
 
-		Texture(Texture&& rhs) noexcept;
-		Texture& operator=(Texture&& rhs) noexcept;
+		Texture(Texture&& rhs) noexcept = default;
+		Texture& operator=(Texture&& rhs) noexcept = default;
 		
 		vkh::Image image;
 		vk::UniqueImageView imageView;

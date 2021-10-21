@@ -13,7 +13,7 @@ void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& 
 
 	for (auto const& reflectedDescriptor : pipeline.dsLayout.reflectedDescriptors)
 	{
-		if (reflectedDescriptor.setNumber == vkh::DescriptorSetIndex::Material)
+		if (reflectedDescriptor.setNumber == vkh::DescriptorSetIndex::Materials)
 		{
 			for (auto const& binding : reflectedDescriptor.bindings)
 			{
@@ -31,7 +31,6 @@ void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& 
 	bufferCreateInfo.size = getUniformBufferSize();
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	uniformBuffer.create(deviceContext, bufferCreateInfo, allocInfo);
-
 }
 
 size_t Material::getUniformBufferSize() const noexcept
@@ -129,11 +128,6 @@ void Material::updateBuffer()
 		updateMember(bufferData, offset, p);
 	}
 	uniformBuffer.unmap();
-}
-
-void Material::bind(vk::CommandBuffer cmdBuffer, uint32 index)
-{
-	cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *graphicsPipeline->pipelineLayout, 0, 1, &descriptorSets[index], 0, nullptr);
 }
 
 void Material::updateDescriptorSets()
