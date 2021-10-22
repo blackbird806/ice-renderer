@@ -5,10 +5,9 @@
 #include "utility.hpp"
 #include "vkhDeviceContext.hpp"
 
-LoadedMesh loadObj(std::filesystem::path const& objPath)
+LoadedObj loadObj(std::filesystem::path const& objPath)
 {
 	tinyobj::ObjReaderConfig reader_config;
-	reader_config.mtl_search_path = "./"; // Path to material files
 	tinyobj::ObjReader reader;
 	
 	if (!reader.ParseFromFile(objPath.string(), reader_config)) 
@@ -18,12 +17,12 @@ LoadedMesh loadObj(std::filesystem::path const& objPath)
 		}
 	}
 
+	LoadedObj loadedObj;
 	auto const& attrib = reader.GetAttrib();
 	auto const& shapes = reader.GetShapes();
-	auto const& materials = reader.GetMaterials();
+	loadedObj.materials = reader.GetMaterials();
 	
-	std::unordered_map<LoadedMesh::Vertex, uint32> uniqueVertices = {};
-	LoadedMesh loadedMesh;
+	std::unordered_map<LoadedObj::Vertex, uint32> uniqueVertices = {};
 	// Loop over shapes
 	for (size_t s = 0; s < shapes.size(); s++)
 	{
@@ -36,7 +35,7 @@ LoadedMesh loadObj(std::filesystem::path const& objPath)
 			// Loop over vertices in the face.
 			for (size_t v = 0; v < fv; v++)
 			{
-				LoadedMesh::Vertex vertex{};
+				LoadedObj::Vertex vertex{};
 				
 				// access to vertex
 				tinyobj::index_t const idx = shapes[s].mesh.indices[index_offset + v];
@@ -78,10 +77,10 @@ LoadedMesh loadObj(std::filesystem::path const& objPath)
 				vertex.color.b = blue;
 				
 				if (uniqueVertices.count(vertex) == 0) {
-					uniqueVertices[vertex] = static_cast<uint32>(loadedMesh.vertices.size());
-					loadedMesh.vertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32>(loadedObj.vertices.size());
+					loadedObj.vertices.push_back(vertex);
 				}
-				loadedMesh.indices.push_back(uniqueVertices[vertex]);
+				loadedObj.indices.push_back(uniqueVertices[vertex]);
 			}
 			
 			index_offset += fv;
@@ -90,10 +89,10 @@ LoadedMesh loadObj(std::filesystem::path const& objPath)
 			shapes[s].mesh.material_ids[f];
 		}
 	}
-	return loadedMesh;
+	return loadedObj;
 }
 
-Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
+Mesh::Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh)
 {
 	{
 		vk::BufferCreateInfo vertexBufferInfo;

@@ -7,6 +7,10 @@
 #include "vkhBuffer.hpp"
 #include "vkhShader.hpp"
 
+namespace tinyobj {
+	struct material_t;
+}
+
 namespace vkh {
 	struct GraphicsPipeline;
 }
@@ -24,6 +28,8 @@ struct Material
 	void updateBuffer();
 	
 	void updateDescriptorSets();
+
+	vkh::ShaderReflector::ReflectedDescriptorSet::Member* getParameter(std::string const& name);
 	
 	vkh::GraphicsPipeline* graphicsPipeline; // To remove ?
 
@@ -32,3 +38,5 @@ struct Material
 	vk::DescriptorSet descriptorSet;
 	vkh::Buffer uniformBuffer; // TODO set big material buffer in pipeline batch
 };
+
+void updateFromObjMaterial(tinyobj::material_t const& objMtrl, Material& mtrl);

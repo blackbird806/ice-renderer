@@ -5,7 +5,6 @@
 
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
-#include "vkhTexture.hpp"
 
 struct PipelineBatch
 {

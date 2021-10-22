@@ -48,6 +48,7 @@ void PipelineBatch::updatePipelineConstantsSet() const
 	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 }
 
+// @Performance cache results
 void PipelineBatch::updatePipelineConstantBuffer()
 {
 	size_t offset = 0;

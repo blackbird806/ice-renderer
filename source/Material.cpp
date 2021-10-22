@@ -1,4 +1,7 @@
 #include "material.hpp"
+
+#include <tiny/tiny_obj_loader.h>
+
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
 #include "vkhDeviceContext.hpp"
@@ -142,4 +145,40 @@ void Material::updateDescriptorSets()
 	descriptorWrite.pBufferInfo = &bufferInfo;
 	
 	graphicsPipeline->deviceContext->device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
+}
+
+vkh::ShaderReflector::ReflectedDescriptorSet::Member* Material::getParameter(std::string const& name)
+{
+	// @TODO handle this more elgantly;
+	auto& trueParams = std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(parameters[0].value).members;
+	auto const it = std::find_if(trueParams.begin(), trueParams.end(), [&name] (auto const& e)
+		{
+			return e.name == name;
+		});
+	if (it != trueParams.end())
+		return &(*it);
+	return nullptr;
+}
+
+void updateFromObjMaterial(tinyobj::material_t const& objMtrl, Material& mtrl)
+{
+#define PARAMETER_CASE_VEC3(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value = glm::vec3(objMtrl.NAME[0], objMtrl.NAME[1], objMtrl.NAME[2]);
+	PARAMETER_CASE_VEC3(ambient);
+	PARAMETER_CASE_VEC3(diffuse);
+	PARAMETER_CASE_VEC3(specular);
+	PARAMETER_CASE_VEC3(transmittance);
+	PARAMETER_CASE_VEC3(emission);
+
+#define PARAMETER_CASE_SINGLE(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value = objMtrl.NAME;
+	PARAMETER_CASE_SINGLE(shininess);
+	PARAMETER_CASE_SINGLE(ior);
+	PARAMETER_CASE_SINGLE(dissolve);
+	PARAMETER_CASE_SINGLE(illum);
+	PARAMETER_CASE_SINGLE(roughness);
+	PARAMETER_CASE_SINGLE(metallic);
+	PARAMETER_CASE_SINGLE(sheen);
+	PARAMETER_CASE_SINGLE(clearcoat_thickness);
+	PARAMETER_CASE_SINGLE(clearcoat_roughness);
+	PARAMETER_CASE_SINGLE(anisotropy);
+	PARAMETER_CASE_SINGLE(anisotropy_rotation);
 }

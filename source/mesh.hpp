@@ -8,6 +8,7 @@
 
 #include <vkhBuffer.hpp>
 #include <vkhCommandBuffers.hpp>
+#include <tiny/tiny_obj_loader.h>
 
 #include "renderObject.hpp"
 
@@ -15,7 +16,7 @@ namespace vkh {
 	struct DeviceContext;
 }
 
-struct LoadedMesh
+struct LoadedObj
 {
 	struct Vertex
 	{
@@ -32,12 +33,13 @@ struct LoadedMesh
 	
 	std::vector<Vertex> vertices;
 	std::vector<uint32> indices;
+	std::vector<tinyobj::material_t> materials;
 };
 
 // @TODO true hash function
 namespace std {
-	template<> struct hash<LoadedMesh::Vertex> {
-		size_t operator()(LoadedMesh::Vertex const& vertex) const {
+	template<> struct hash<LoadedObj::Vertex> {
+		size_t operator()(LoadedObj::Vertex const& vertex) const {
 			return ((((
 					(hash<glm::vec3>()(vertex.pos) ^
 					(hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
@@ -47,12 +49,12 @@ namespace std {
 	};
 }
 
-LoadedMesh loadObj(std::filesystem::path const& objPath);
+LoadedObj loadObj(std::filesystem::path const& objPath);
 
 class Mesh : RenderObject
 {
 public:
-	Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh);
+	Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh);
 
 	void draw(vk::CommandBuffer cmdBuff);
 

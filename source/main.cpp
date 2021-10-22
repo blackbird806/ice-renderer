@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <GLFW/glfw3.h>
 
 #include <stb/stb_image.h>
@@ -114,7 +115,8 @@ int main()
 	};
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
-	Mesh mesh2(context.deviceContext, loadObj("assets/ship_wreck.obj"));
+	auto const obj = loadObj("assets/palm_long.obj");
+	Mesh mesh2(context.deviceContext, obj);
 
 	vkh::Texture text = loadTexture(context.deviceContext, "assets/texture.jpg");
 	vkh::Texture text2 = loadTexture(context.deviceContext, "assets/grass.png");
@@ -173,12 +175,22 @@ int main()
 	mtrl.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
 	mtrl.updateBuffer();
 	mtrl.updateDescriptorSets();
+	scene.materials.push_back(std::move(mtrl));
 
+	for (auto const& objMaterial : obj.materials)
+	{
+		Material mtrlObj;
+		mtrlObj.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
+		updateFromObjMaterial(objMaterial, mtrlObj);
+		mtrlObj.updateBuffer();
+		mtrlObj.updateDescriptorSets();
+		scene.materials.push_back(std::move(mtrlObj));
+	}
+	
 	vk::ClearValue clearsValues[2];
 	clearsValues[0].color = vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} };
 	clearsValues[1].depthStencil = vk::ClearDepthStencilValue(1.0, 0.0);
 
-	scene.materials.push_back(std::move(mtrl));
 	scene.meshes.push_back(std::move(mesh));
 	scene.meshes.push_back(std::move(mesh2));
 	
@@ -194,11 +206,14 @@ int main()
 	scene.addObject(root.nodeId)
 		.setName("boat")
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f)))
-		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
+		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 1, .meshID = 1 });
 
 	float time = 0;
+	float deltaTime = 0;
 	while (!glfwWindowShouldClose(window))
 	{
+		auto startFramePoint = std::chrono::high_resolution_clock::now();
+
 		glfwPollEvents();
 		
 		if (!context.startFrame())
@@ -207,6 +222,7 @@ int main()
 		gui.startFrame();
 		auto cmdBuffer = context.commandBuffers.begin(context.currentFrame);
 
+		ImGui::Text("deltaTime %f", deltaTime);
 		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
 
 		if (ImGui::Button("Rebuild pipelines"))
@@ -219,10 +235,13 @@ int main()
 		scene.imguiDrawSceneTree();
 		scene.computeWorldsTransforms();
 		
-		for (auto& m : scene.materials)
+		for (int i = 0; auto& m : scene.materials)
 		{
+			ImGui::PushID(i++);
 			m.imguiEditor();
 			m.updateBuffer();
+			ImGui::PopID();
+			ImGui::Separator();
 		}
 
 		glm::mat4 view;
@@ -233,7 +252,7 @@ int main()
 
 		PipelineBatch::defaultPipelineConstants["view"] = { .value = view };
 		PipelineBatch::defaultPipelineConstants["proj"] = { .value = proj };
-		PipelineBatch::defaultPipelineConstants["time"] = { .value = time++ };
+		PipelineBatch::defaultPipelineConstants["time"] = { .value = time };
 
 		defaultPipelineBatch.updatePipelineConstantBuffer();
 		
@@ -254,15 +273,19 @@ int main()
 			vk::DescriptorSet sets1[] = { defaultPipelineBatch.texturesSet };
 			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
 
+			uint32 lastMaterialID = -1;
 			for (auto const& [id, object] : scene.renderObjects)
 			{
 				scene.meshes[object.meshID].modelBuffer.writeStruct(scene.worlds[id], sizeof(glm::mat4) * context.currentFrame);
 
-				vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSet };
-				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
-
-				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
+				if (object.materialID != lastMaterialID)
+				{
+					vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSet };
+					cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
+					lastMaterialID = object.materialID;
+				}
 				
+				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
 				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
@@ -273,6 +296,9 @@ int main()
 		cmdBuffer.end();
 
 		context.endFrame();
+		
+		deltaTime = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - startFramePoint).count();
+		time += deltaTime;
 	}
 	
 	// wait idle before destroying gui

@@ -13,6 +13,12 @@ layout(set = 2, binding = 0) uniform Material {
     vec3 color;
     float padding_0;
     int albedoId;
+    float padding_1, padding_2, padding_3;
+    vec3 ambient;
+    float padding_4;
+    vec3 diffuse;
+    float padding_5;
+    vec3 specullar;
 };
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -21,9 +27,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
-    vec3 ncolor = color;
-    ncolor.r = sin(time/10.0);
-    ncolor.g = cos(time/10.0);
-    ncolor.b = cos(time/10.0);
-    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(ncolor, 1.0);
+    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(diffuse, 1.0);
 }
