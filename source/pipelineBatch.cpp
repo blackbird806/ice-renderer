@@ -44,25 +44,35 @@ void PipelineBatch::updatePipelineConstantsSet() const
 	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 }
 
-void PipelineBatch::addImageInfo(vk::DescriptorImageInfo const& info)
+void PipelineBatch::addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info)
 {
-	imageInfos.push_back(info);
+	assert(binding < imageInfosArray.size());
+	imageInfosArray[binding].push_back(info);
+}
+
+void PipelineBatch::setImageArraySize(size_t size)
+{
+	imageInfosArray.resize(size);
 }
 
 void PipelineBatch::updateTextureDescriptorSet()
 {
-	// @TODO
-	imageInfos.resize(64, imageInfos[0]);
+	std::vector<vk::WriteDescriptorSet> descriptorWrites(imageInfosArray.size());
 	
-	vk::WriteDescriptorSet descriptorWrites[1];
-	descriptorWrites[0].dstSet = texturesSet;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-	descriptorWrites[0].descriptorCount = imageInfos.size();
-	descriptorWrites[0].pImageInfo = imageInfos.data();
+	for (int i = 0; i < imageInfosArray.size(); i++)
+	{
+		// @TODO
+		imageInfosArray[i].resize(64, imageInfosArray[i][0]);
 
-	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
+		descriptorWrites[i].dstSet = texturesSet;
+		descriptorWrites[i].dstBinding = i;
+		descriptorWrites[i].dstArrayElement = 0;
+		descriptorWrites[i].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrites[i].descriptorCount = imageInfosArray[i].size();
+		descriptorWrites[i].pImageInfo = imageInfosArray[i].data();
+	}
+	
+	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites.data(), 0, nullptr);
 }
 
 vk::DeviceSize PipelineBatch::getPipelineConstantsBufferEntrySize() const

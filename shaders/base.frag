@@ -1,6 +1,7 @@
 #version 450
 
 layout(set = 1, binding = 0) uniform sampler2D albedoSamplers[64];
+layout(set = 1, binding = 1) uniform sampler2D normalSamplers[64];
 
 // updated once per Material "bucket"
 layout(set = 2, binding = 0) uniform Material {
@@ -16,5 +17,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
-    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(color, 1.0f);
+    outColor = texture(albedoSamplers[albedoId], fragTexCoord) + texture(normalSamplers[albedoId], fragTexCoord);
 }

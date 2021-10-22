@@ -7,7 +7,7 @@
 
 // @REVIEW Material impl
 
-void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline)
+void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline, vk::DescriptorPool descriptorPool)
 {
 	graphicsPipeline = &pipeline;
 
@@ -31,6 +31,8 @@ void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& 
 	bufferCreateInfo.size = getUniformBufferSize();
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	uniformBuffer.create(deviceContext, bufferCreateInfo, allocInfo);
+	
+	descriptorSet = pipeline.createDescriptorSets(descriptorPool, vkh::Materials, 1)[0];
 }
 
 size_t Material::getUniformBufferSize() const noexcept
@@ -136,21 +138,14 @@ void Material::updateDescriptorSets()
 	bufferInfo.buffer = uniformBuffer.buffer;
 	bufferInfo.offset = 0;
 	bufferInfo.range = VK_WHOLE_SIZE;
-
-	std::vector<vk::WriteDescriptorSet> descriptorWrites;
-	descriptorWrites.reserve(descriptorSets.size());
 	
-	for (auto const& set : descriptorSets)
-	{
-		vk::WriteDescriptorSet descriptorWrite;
-		descriptorWrite.dstSet = set;
-		descriptorWrite.dstBinding = 0;
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-		descriptorWrites.push_back(descriptorWrite);
-	}
+	vk::WriteDescriptorSet descriptorWrite;
+	descriptorWrite.dstSet = descriptorSet;
+	descriptorWrite.dstBinding = 0;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pBufferInfo = &bufferInfo;
 	
-	graphicsPipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites.data(), 0, nullptr);
+	graphicsPipeline->deviceContext->device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
 }

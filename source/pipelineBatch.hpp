@@ -12,7 +12,9 @@ struct PipelineBatch
 
 	void updatePipelineConstantsSet() const;
 
-	void addImageInfo(vk::DescriptorImageInfo const& info);
+	void addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info);
+	void setImageArraySize(size_t size);
+	
 	void updateTextureDescriptorSet();
 	
 	vk::DeviceSize getPipelineConstantsBufferEntrySize() const;
@@ -24,7 +26,7 @@ struct PipelineBatch
 	vkh::Buffer pipelineConstantBuffer;
 	// @Review big material buffer ? (bindless ? dynamic offset ?)
 	
-	std::vector<vk::DescriptorImageInfo> imageInfos;
+	std::vector<std::vector<vk::DescriptorImageInfo>> imageInfosArray;
 
 	vk::DescriptorSet pipelineConstantsSet;
 	vk::DescriptorSet texturesSet;

@@ -172,13 +172,13 @@ int main()
 	imageInfo2.imageView = *text2.imageView;
 	imageInfo2.imageLayout = text2.image.getLayout();
 
-	defaultPipelineBatch.addImageInfo(imageInfo);
-	defaultPipelineBatch.addImageInfo(imageInfo2);
+	defaultPipelineBatch.setImageArraySize(2);
+	defaultPipelineBatch.addImageInfo(0, imageInfo);
+	defaultPipelineBatch.addImageInfo(1, imageInfo2);
 	defaultPipelineBatch.updateTextureDescriptorSet();
 	
 	Material mtrl;
-	mtrl.create(context.deviceContext, defaultPipeline);
-	mtrl.descriptorSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Materials, context.maxFramesInFlight);
+	mtrl.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
 	mtrl.updateBuffer();
 	mtrl.updateDescriptorSets();
 
@@ -247,7 +247,7 @@ int main()
 			{
 				scene.meshes[object.meshID].modelBuffer.writeStruct(scene.worlds[id], sizeof(glm::mat4) * context.currentFrame);
 
-				vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSets[context.currentFrame] };
+				vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSet };
 				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
 
 				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);

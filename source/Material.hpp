@@ -14,7 +14,7 @@ namespace vkh {
 //@Review material builder ?
 struct Material
 {
-	void create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline);
+	void create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline, vk::DescriptorPool);
 
 	size_t getUniformBufferSize() const noexcept;
 
@@ -29,6 +29,6 @@ struct Material
 
 	std::vector<vkh::ShaderReflector::ReflectedDescriptorSet::Member> parameters;
 	
-	std::vector<vk::DescriptorSet> descriptorSets;
+	vk::DescriptorSet descriptorSet;
 	vkh::Buffer uniformBuffer; // TODO set big material buffer in pipeline batch
 };
