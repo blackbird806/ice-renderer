@@ -193,6 +193,7 @@ void Scene::imguiDrawSceneTreeLevel(Iterator it)
 				imguiDrawSceneTreeLevel(it);
 				break;
 			}
+			ImGui::PushID(i++);
 
 			if (ImGui::Selectable(node.getName().c_str()))
 			{
@@ -206,6 +207,7 @@ void Scene::imguiDrawSceneTreeLevel(Iterator it)
 			if (ImGui::DragFloat3("scale", (float*)&transform.scale))
 				node.setTransform(transform);
 
+			ImGui::PopID();
 		}
 		ImGui::TreePop();
 	}

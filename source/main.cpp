@@ -118,17 +118,10 @@ int main()
 
 	vkh::Texture text = loadTexture(context.deviceContext, "assets/texture.jpg");
 	vkh::Texture text2 = loadTexture(context.deviceContext, "assets/grass.png");
-	
-	struct FrameConstants
-	{
-		glm::mat4 view;
-		glm::mat4 proj;
-	} frameConstants;
 
 	PipelineBatch defaultPipelineBatch;
 	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool, 32);
 
-	//auto textureSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Textures, context.maxFramesInFlight);
 	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 
@@ -172,7 +165,6 @@ int main()
 	imageInfo2.imageView = *text2.imageView;
 	imageInfo2.imageLayout = text2.image.getLayout();
 
-	defaultPipelineBatch.setImageArraySize(2);
 	defaultPipelineBatch.addImageInfo(0, imageInfo);
 	defaultPipelineBatch.addImageInfo(1, imageInfo2);
 	defaultPipelineBatch.updateTextureDescriptorSet();
@@ -192,14 +184,19 @@ int main()
 	
 	auto root = scene.addObject(invalidNodeID)
 		.setName("root")
+		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
+
+	scene.addObject(root.nodeId)
+		.setName("cube")
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)))
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
 	
 	scene.addObject(root.nodeId)
-		.setName("child 1")
-		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)))
+		.setName("boat")
+		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f)))
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
-	
+
+	float time = 0;
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -211,6 +208,13 @@ int main()
 		auto cmdBuffer = context.commandBuffers.begin(context.currentFrame);
 
 		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
+
+		if (ImGui::Button("Rebuild pipelines"))
+		{
+			context.recreateSwapchain();
+			ImGui::EndFrame();
+			continue;
+		}
 		
 		scene.imguiDrawSceneTree();
 		scene.computeWorldsTransforms();
@@ -220,12 +224,19 @@ int main()
 			m.imguiEditor();
 			m.updateBuffer();
 		}
-		
-		frameConstants.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		frameConstants.proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.1f, 10.0f);
-		frameConstants.proj[1][1] *= -1;
-		defaultPipelineBatch.pipelineConstantBuffer.writeStruct(frameConstants);
 
+		glm::mat4 view;
+		glm::mat4 proj;
+		view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.1f, 10.0f);
+		proj[1][1] *= -1;
+
+		PipelineBatch::defaultPipelineConstants["view"] = { .value = view };
+		PipelineBatch::defaultPipelineConstants["proj"] = { .value = proj };
+		PipelineBatch::defaultPipelineConstants["time"] = { .value = time++ };
+
+		defaultPipelineBatch.updatePipelineConstantBuffer();
+		
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = *defaultRenderPass;
 		renderPassInfo.framebuffer = *presentFrameBuffers[context.currentFrame];

@@ -1,5 +1,7 @@
 #include "pipelineBatch.hpp"
 
+std::unordered_map<std::string, vkh::ShaderReflector::ReflectedDescriptorSet::Member> PipelineBatch::defaultPipelineConstants;
+
 void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_)
 {
 	assert(batchSize > 0);
@@ -19,10 +21,12 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool 
 		pipelineConstantBuffer.create(deviceContext, bufferCreateInfo, allocInfo);
 	}
 	
-	// @Review nb sets
 	pipelineConstantsSet = pipeline_.createDescriptorSets(pool, vkh::PipelineConstants, 1)[0];
 	texturesSet = pipeline_.createDescriptorSets(pool, vkh::Textures, 1)[0];
-	
+
+	// set arraysize depending of the shader params
+	imageInfosArray.resize(pipeline_.dsLayout.reflectedDescriptors[vkh::Textures].bindings.size());
+
 	updatePipelineConstantsSet();
 }
 
@@ -44,15 +48,29 @@ void PipelineBatch::updatePipelineConstantsSet() const
 	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 }
 
+void PipelineBatch::updatePipelineConstantBuffer()
+{
+	size_t offset = 0;
+	for (auto const& binding : pipeline->dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::PipelineConstants].bindings)
+	{
+		for(auto const& mem : std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(binding.element.value).members)
+		{
+			auto const& it = defaultPipelineConstants.find(mem.name);
+			if (it != defaultPipelineConstants.end())
+			{
+				auto const size = it->second.getSize();
+				// @TODO handle member alignement
+				pipelineConstantBuffer.writeData({ (uint8*)&it->second.value, size}, offset);
+				offset += size;
+			}
+		}
+	}
+}
+
 void PipelineBatch::addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info)
 {
 	assert(binding < imageInfosArray.size());
 	imageInfosArray[binding].push_back(info);
-}
-
-void PipelineBatch::setImageArraySize(size_t size)
-{
-	imageInfosArray.resize(size);
 }
 
 void PipelineBatch::updateTextureDescriptorSet()
@@ -78,15 +96,11 @@ void PipelineBatch::updateTextureDescriptorSet()
 vk::DeviceSize PipelineBatch::getPipelineConstantsBufferEntrySize() const
 {
 	vk::DeviceSize size = 0;
-	for (auto const& reflectedDescriptor : pipeline->dsLayout.reflectedDescriptors)
+
+	for (auto const& binding : pipeline->dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::PipelineConstants].bindings)
 	{
-		if (reflectedDescriptor.setNumber == vkh::DescriptorSetIndex::PipelineConstants)
-		{
-			for (auto const& binding : reflectedDescriptor.bindings)
-			{
-				size += binding.element.getSize();
-			}
-		}
+		size += binding.element.getSize();
 	}
+	
 	return size;
 }

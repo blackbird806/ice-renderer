@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
@@ -8,12 +9,14 @@
 
 struct PipelineBatch
 {
+	static std::unordered_map<std::string, vkh::ShaderReflector::ReflectedDescriptorSet::Member> defaultPipelineConstants;
+
 	void create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_);
 
 	void updatePipelineConstantsSet() const;
+	void updatePipelineConstantBuffer();
 
 	void addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info);
-	void setImageArraySize(size_t size);
 	
 	void updateTextureDescriptorSet();
 	

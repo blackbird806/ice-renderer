@@ -11,15 +11,9 @@ void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& 
 {
 	graphicsPipeline = &pipeline;
 
-	for (auto const& reflectedDescriptor : pipeline.dsLayout.reflectedDescriptors)
+	for (auto const& binding : pipeline.dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::Materials].bindings)
 	{
-		if (reflectedDescriptor.setNumber == vkh::DescriptorSetIndex::Materials)
-		{
-			for (auto const& binding : reflectedDescriptor.bindings)
-			{
-				parameters.push_back(binding.element);
-			}
-		}
+		parameters.push_back(binding.element);
 	}
 	
 	vma::AllocationCreateInfo allocInfo;

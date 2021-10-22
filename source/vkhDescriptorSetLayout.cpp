@@ -25,6 +25,11 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 		}
 	}
 
+	std::sort(reflectedDescriptors.begin(), reflectedDescriptors.end(), [](auto& a, auto& b)
+		{
+			return a.setNumber < b.setNumber;
+		});
+	
 	// set correct shader stages to bindings
 	for (auto& dsLayout : dsLayoutData)
 	{
