@@ -11,6 +11,7 @@
 #include "vkhTexture.hpp"
 #include "pipelineBatch.hpp"
 #include "scenegraph.hpp"
+#include "utility.hpp"
 
 #undef min
 #undef max
@@ -47,6 +48,44 @@ static vkh::Texture loadTexture(vkh::DeviceContext& ctx, std::string const& path
 	return text;
 }
 
+static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
+{
+	vk::Format const colorFormat = context.swapchain.format;
+	auto defaultRenderPass = vkh::createDefaultRenderPassMSAA(context.deviceContext, colorFormat, context.msaaSamples);
+
+	std::system("cd .\\shaders && shadercompile.bat");
+
+	auto const fragSpv = readBinFile("shaders/frag.spv");
+	vkh::ShaderModule fragmentShader;
+	fragmentShader.create(context.deviceContext, toSpan<uint8>(fragSpv));
+	auto const vertSpv = readBinFile("shaders/vert.spv");
+
+	vkh::ShaderModule vertexShader;
+	vertexShader.create(context.deviceContext, toSpan<uint8>(vertSpv));
+
+	int width, height;
+	glfwGetWindowSize(context.window, &width, &height);
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
+		.vertexShader = std::move(vertexShader),
+		.fragmentShader = std::move(fragmentShader),
+		.renderPass = *defaultRenderPass,
+		.imageExtent = { (uint32)width, (uint32)height},
+		.msaaSamples = context.msaaSamples
+	};
+
+	vkh::GraphicsPipeline defaultPipeline;
+	defaultPipeline.create(context.deviceContext, pipelineInfo);
+
+	struct
+	{
+		vkh::GraphicsPipeline pipeline;
+		vk::UniqueRenderPass renderPass;
+	} ret;
+	ret.pipeline = std::move(defaultPipeline);
+	ret.renderPass = std::move(defaultRenderPass);
+	return ret;
+}
+
 int main()
 {
 	glfwInit();
@@ -61,8 +100,16 @@ int main()
 
 	GUILayer gui;
 	gui.init(context);
-	context.onSwapchainRecreate = [&context, &gui] ()
+	
+	auto [defaultPipeline, defaultRenderPass] = buildDefaultPipelineAndRenderPass(context);
+	auto presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
+
+	context.onSwapchainRecreate = [&] ()
 	{
+		auto pair = buildDefaultPipelineAndRenderPass(context);
+		defaultPipeline = std::move(pair.pipeline);
+		defaultRenderPass = std::move(pair.renderPass);
+		presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 		gui.handleSwapchainRecreation(context);
 	};
 
@@ -78,51 +125,42 @@ int main()
 		glm::mat4 proj;
 	} frameConstants;
 
-
 	PipelineBatch defaultPipelineBatch;
-	defaultPipelineBatch.create(context.defaultPipeline, *context.descriptorPool, 32);
-	//vkh::Buffer frameConstantsBuffer;
-	//{
-	//	vma::AllocationCreateInfo allocInfo;
-	//	allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-	//	vk::BufferCreateInfo bufferCreateInfo;
-	//	bufferCreateInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-	//	bufferCreateInfo.size = sizeof(FrameConstants);
-	//	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-	//	frameConstantsBuffer.create(context.deviceContext, bufferCreateInfo, allocInfo);
-	//	frameConstantsBuffer.writeStruct(frameConstants);
-	//}
+	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool, 32);
 
-	//auto frameSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::PipelineConstants, context.maxFramesInFlight);
-	auto textureSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Textures, context.maxFramesInFlight);
-	mesh.modelSet = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight)[0];
-	mesh2.modelSet = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight)[0];
+	//auto textureSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Textures, context.maxFramesInFlight);
+	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
+	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 
+	for(int i = 0; i < context.maxFramesInFlight; i++)
 	{
 		vk::DescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = mesh.modelBuffer.buffer;
-		bufferInfo.offset = 0;
+		bufferInfo.offset = i * sizeof(glm::mat4);
 		bufferInfo.range = sizeof(glm::mat4);
 
+		vk::DescriptorBufferInfo bufferInfo2{};
+		bufferInfo2.buffer = mesh2.modelBuffer.buffer;
+		bufferInfo2.offset = i * sizeof(glm::mat4);
+		bufferInfo2.range = sizeof(glm::mat4);
+
 		vk::WriteDescriptorSet descriptorWrites[2];
-		descriptorWrites[0].dstSet = mesh.modelSet;
+		descriptorWrites[0].dstSet = mesh.modelSets[i];
 		descriptorWrites[0].dstBinding = 0;
 		descriptorWrites[0].dstArrayElement = 0;
 		descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
 		descriptorWrites[0].descriptorCount = 1;
 		descriptorWrites[0].pBufferInfo = &bufferInfo;
 
-		descriptorWrites[1].dstSet = mesh2.modelSet;
+		descriptorWrites[1].dstSet = mesh2.modelSets[i];
 		descriptorWrites[1].dstBinding = 0;
 		descriptorWrites[1].dstArrayElement = 0;
 		descriptorWrites[1].descriptorType = vk::DescriptorType::eUniformBuffer;
 		descriptorWrites[1].descriptorCount = 1;
-		descriptorWrites[1].pBufferInfo = &bufferInfo;
+		descriptorWrites[1].pBufferInfo = &bufferInfo2;
 		
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
-
-	size_t constexpr maxTextures = 64;
 
 	vk::DescriptorImageInfo imageInfo{};
 	imageInfo.sampler = *text.sampler;
@@ -133,44 +171,14 @@ int main()
 	imageInfo2.sampler = *text2.sampler;
 	imageInfo2.imageView = *text2.imageView;
 	imageInfo2.imageLayout = text2.image.getLayout();
+
+	defaultPipelineBatch.addImageInfo(imageInfo);
+	defaultPipelineBatch.addImageInfo(imageInfo2);
+	defaultPipelineBatch.updateTextureDescriptorSet();
 	
-	std::vector<vk::DescriptorImageInfo> imageInfos(maxTextures, imageInfo);
-	imageInfos[1] = imageInfo2;
-	
-	for (auto& set : textureSets)
-	{
-		vk::WriteDescriptorSet descriptorWrites[1];
-		descriptorWrites[0].dstSet = set;
-		descriptorWrites[0].dstBinding = 0;
-		descriptorWrites[0].dstArrayElement = 0;
-		descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		descriptorWrites[0].descriptorCount = imageInfos.size();
-		descriptorWrites[0].pImageInfo = imageInfos.data();
-
-		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
-	}
-	
-	//for (auto& set : frameSets)	
-	//{
-	//	vk::DescriptorBufferInfo bufferInfo{};
-	//	bufferInfo.buffer = frameConstantsBuffer.buffer;
-	//	bufferInfo.offset = 0;
-	//	bufferInfo.range = sizeof(FrameConstants);
-
-	//	vk::WriteDescriptorSet descriptorWrites[1];
-	//	descriptorWrites[0].dstSet = set;
-	//	descriptorWrites[0].dstBinding = 0;
-	//	descriptorWrites[0].dstArrayElement = 0;
-	//	descriptorWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
-	//	descriptorWrites[0].descriptorCount = 1;
-	//	descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-	//	context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
-	//}
-
 	Material mtrl;
-	mtrl.create(context.deviceContext, context.defaultPipeline);
-	mtrl.descriptorSets = context.defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Materials, context.maxFramesInFlight);
+	mtrl.create(context.deviceContext, defaultPipeline);
+	mtrl.descriptorSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Materials, context.maxFramesInFlight);
 	mtrl.updateBuffer();
 	mtrl.updateDescriptorSets();
 
@@ -191,18 +199,6 @@ int main()
 		.setName("child 1")
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)))
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
-	
-	//auto a = scene.addObject(root)
-	//	.setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)))
-	//	.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
-	//
-	//scene.addObject(a.nodeId)
-	//	.setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)))
-	//	.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
-
-	//scene.addObject(a.nodeId)
-	//	.setTransform(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)))
-	//	.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
 	
 	while (!glfwWindowShouldClose(window))
 	{
@@ -231,8 +227,8 @@ int main()
 		defaultPipelineBatch.pipelineConstantBuffer.writeStruct(frameConstants);
 
 		vk::RenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.renderPass = *context.defaultRenderPass;
-		renderPassInfo.framebuffer = *context.framebuffers[context.currentFrame];
+		renderPassInfo.renderPass = *defaultRenderPass;
+		renderPassInfo.framebuffer = *presentFrameBuffers[context.currentFrame];
 		renderPassInfo.renderArea.offset = vk::Offset2D{ 0, 0 };
 		renderPassInfo.renderArea.extent = context.swapchain.extent;
 		renderPassInfo.clearValueCount = std::size(clearsValues);
@@ -240,38 +236,26 @@ int main()
 		
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 		
-			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipeline);
+			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipeline);
 
 			vk::DescriptorSet sets0[] = { defaultPipelineBatch.pipelineConstantsSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets0), sets0, 0, nullptr);
-			vk::DescriptorSet sets1[] = { textureSets[context.currentFrame] };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 0, std::size(sets0), sets0, 0, nullptr);
+			vk::DescriptorSet sets1[] = { defaultPipelineBatch.texturesSet };
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
 
 			for (auto const& [id, object] : scene.renderObjects)
 			{
-				scene.meshes[object.meshID].modelBuffer.writeStruct(scene.worlds[id]);
+				scene.meshes[object.meshID].modelBuffer.writeStruct(scene.worlds[id], sizeof(glm::mat4) * context.currentFrame);
 
 				vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSets[context.currentFrame] };
-				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSet };
+				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
 
-				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
-				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
+				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
+				
+				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
 		
-			//vk::DescriptorSet sets0[] = { frameSets[context.currentFrame] };
-			//vk::DescriptorSet sets0[] = { defaultPipelineBatch.pipelineConstantsSet };
-			//vk::DescriptorSet sets1[] = { textureSets[context.currentFrame] };
-			//vk::DescriptorSet sets2[] = { mtrl.descriptorSets[context.currentFrame] };
-			//vk::DescriptorSet sets3[] = { modelSets[context.currentFrame] };
-		
-			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 0, std::size(sets0), sets0, 0, nullptr);
-			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
-			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
-			//cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *context.defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
-
-		//mesh.draw(cmdBuffer, context.currentFrame);
-
 		cmdBuffer.endRenderPass();
 		
 		gui.render(cmdBuffer, context.currentFrame, context.swapchain.extent);

@@ -55,12 +55,12 @@ void Buffer::unmap()
 	deviceContext->gpuAllocator.unmapMemory(allocation);
 }
 
-void Buffer::writeData(std::span<uint8> data)
+void Buffer::writeData(std::span<uint8> data, size_t offset)
 {
-	assert(data.size_bytes() <= size);
+	assert(data.size_bytes() + offset <= size);
 
 	void* mapped = map();
-		memcpy(mapped, data.data(), data.size_bytes());
+		memcpy((uint8*)mapped + offset, data.data(), data.size_bytes());
 	unmap();
 }
 

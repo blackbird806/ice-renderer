@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 
 #include "utility.hpp"
-#include "vkhShader.hpp"
 #include "vkhUtility.hpp"
 #include "mesh.hpp"
 
@@ -16,32 +15,8 @@ VulkanContext::VulkanContext(GLFWwindow* win) : window(win)
 	deviceContext.create(instance, surface, extensions);
 	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
 
-	std::system("cd .\\shaders && shadercompile.bat");
-
-	auto const fragSpv = readBinFile("shaders/frag.spv");
-	vkh::ShaderModule fragmentShader;
-	fragmentShader.create(deviceContext, toSpan<uint8>(fragSpv));
-	auto const vertSpv = readBinFile("shaders/vert.spv");
-	
-	vkh::ShaderModule vertexShader;
-	vertexShader.create(deviceContext, toSpan<uint8>(vertSpv));
-	
-	vk::Format const colorFormat = swapchain.format;
-	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
-	int width, height;
-	glfwGetWindowSize(win, &width, &height);
-	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
-		.vertexShader = std::move(vertexShader),
-		.fragmentShader = std::move(fragmentShader),
-		.renderPass = *defaultRenderPass,
-		.imageExtent = { (uint32)width, (uint32)height},
-		.msaaSamples = msaaSamples
-	};
-	
-	defaultPipeline.create(deviceContext, pipelineInfo);
 	createMsResources();
 	createDepthResources();
-	createFramebuffers();
 	commandBuffers.create(deviceContext, maxFramesInFlight);
 	createSyncResources();
 	createDescriptorPool();
@@ -58,9 +33,6 @@ VulkanContext::~VulkanContext()
 	commandBuffers.destroy();
 	destroyDepthResources();
 	destroyMsResources();
-	destroyFrameBuffers();
-	defaultPipeline.destroy();
-	defaultRenderPass.reset();
 	swapchain.destroy();
 	deviceContext.destroy();
 	instance.handle->destroySurfaceKHR(surface);
@@ -143,8 +115,9 @@ void VulkanContext::createDepthResources()
 	depthImageView = deviceContext.device.createImageViewUnique(viewInfo, deviceContext.allocationCallbacks);
 }
 
-void VulkanContext::createFramebuffers()
+std::vector<vk::UniqueFramebuffer> VulkanContext::createPresentFramebuffers(vk::RenderPass presentPass)
 {
+	std::vector<vk::UniqueFramebuffer> framebuffers;
 	framebuffers.reserve(maxFramesInFlight);
 	for (size_t i = 0; i < maxFramesInFlight; i++)
 	{
@@ -155,7 +128,7 @@ void VulkanContext::createFramebuffers()
 		};
 
 		vk::FramebufferCreateInfo framebufferInfo{};
-		framebufferInfo.renderPass = *defaultRenderPass;
+		framebufferInfo.renderPass = presentPass;
 		framebufferInfo.attachmentCount = std::size(attachments);
 		framebufferInfo.pAttachments = attachments;
 		framebufferInfo.width = swapchain.extent.width;
@@ -164,6 +137,7 @@ void VulkanContext::createFramebuffers()
 
 		framebuffers.push_back(deviceContext.device.createFramebufferUnique(framebufferInfo, deviceContext.allocationCallbacks));
 	}
+	return framebuffers;
 }
 
 void VulkanContext::createSyncResources()
@@ -212,11 +186,6 @@ void VulkanContext::destroyMsResources()
 	msImageView.reset();
 }
 
-void VulkanContext::destroyFrameBuffers()
-{
-	framebuffers.clear();
-}
-
 void VulkanContext::recreateSwapchain()
 {
 	int width = 0, height = 0;
@@ -230,40 +199,15 @@ void VulkanContext::recreateSwapchain()
 	swapchain.destroy();
 	swapchain.create(&deviceContext, window, surface, maxFramesInFlight, vsync);
 
-	vk::Format const colorFormat = swapchain.format;
-	defaultRenderPass = vkh::createDefaultRenderPassMSAA(deviceContext, colorFormat, msaaSamples);
-	defaultPipeline.destroy();
-
-	auto const fragSpv = readBinFile("shaders/frag.spv");
-	vkh::ShaderModule fragmentShader;
-	fragmentShader.create(deviceContext, toSpan<uint8>(fragSpv));
-
-	auto const vertSpv = readBinFile("shaders/vert.spv");
-	vkh::ShaderModule vertexShader;
-	vertexShader.create(deviceContext, toSpan<uint8>(vertSpv));
-
-	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
-		.vertexShader = std::move(vertexShader),
-		.fragmentShader = std::move(fragmentShader),
-		.renderPass = *defaultRenderPass,
-		.imageExtent = {(uint32)width, (uint32)height},
-		.msaaSamples = msaaSamples
-	};
-
-	defaultPipeline.create(deviceContext, pipelineInfo);
-
 	destroyMsResources();
 	createMsResources();
 	
 	destroyDepthResources();
 	createDepthResources();
 
-	destroyFrameBuffers();
-	createFramebuffers();
-
 	commandBuffers.destroy();
 	commandBuffers.create(deviceContext, maxFramesInFlight);
-	
+
 	onSwapchainRecreate();
 }
 

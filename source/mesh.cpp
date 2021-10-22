@@ -121,17 +121,12 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedMesh const& mesh)
 	{
 		vk::BufferCreateInfo uniformBufferInfo;
 		uniformBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-		uniformBufferInfo.size = sizeof(glm::mat4);
+		uniformBufferInfo.size = sizeof(glm::mat4) * 2; // TODO use max frame in flight here
 		uniformBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 		vma::AllocationCreateInfo allocInfo;
 		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
 		modelBuffer.create(ctx, uniformBufferInfo, allocInfo);
-		
-		// @TODO
-		glm::mat4 model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		
-		modelBuffer.writeStruct(model);
 	}
 	
 }

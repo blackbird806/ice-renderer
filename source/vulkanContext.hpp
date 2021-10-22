@@ -30,13 +30,12 @@ struct VulkanContext
 	void createSurface();
 	void createMsResources();
 	void createDepthResources();
-	void createFramebuffers();
+	std::vector<vk::UniqueFramebuffer> createPresentFramebuffers(vk::RenderPass presentPass);
 	void createSyncResources();
 	void createDescriptorPool();
 
 	void destroyDepthResources();
 	void destroyMsResources();
-	void destroyFrameBuffers();
 	
 	void recreateSwapchain();
 	
@@ -56,12 +55,9 @@ struct VulkanContext
 	vkh::DeviceContext deviceContext;
 	vkh::Instance instance;
 	vkh::Swapchain swapchain;
-	vk::UniqueRenderPass defaultRenderPass;
-	std::vector<vk::UniqueFramebuffer> framebuffers;
-	vkh::GraphicsPipeline defaultPipeline;
 	vkh::CommandBuffers commandBuffers;
 	vk::UniqueDescriptorPool descriptorPool;
-	
+
 	std::vector<vk::UniqueSemaphore> imageAvailableSemaphores;
 	std::vector<vk::UniqueSemaphore> renderFinishedSemaphores;
 

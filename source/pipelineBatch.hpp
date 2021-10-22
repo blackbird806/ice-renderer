@@ -11,18 +11,20 @@ struct PipelineBatch
 	void create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_);
 
 	void updatePipelineConstantsSet() const;
+
+	void addImageInfo(vk::DescriptorImageInfo const& info);
+	void updateTextureDescriptorSet();
 	
 	vk::DeviceSize getPipelineConstantsBufferEntrySize() const;
 
 	uint32 batchSize;
 	
-	// @Review should own of the pipeline ?
 	vkh::GraphicsPipeline* pipeline;
 
 	vkh::Buffer pipelineConstantBuffer;
 	// @Review big material buffer ? (bindless ? dynamic offset ?)
 	
-	std::vector<std::vector<vkh::Texture>> textureArrays;
+	std::vector<vk::DescriptorImageInfo> imageInfos;
 
 	vk::DescriptorSet pipelineConstantsSet;
 	vk::DescriptorSet texturesSet;

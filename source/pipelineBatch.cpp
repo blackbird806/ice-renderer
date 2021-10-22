@@ -44,6 +44,27 @@ void PipelineBatch::updatePipelineConstantsSet() const
 	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 }
 
+void PipelineBatch::addImageInfo(vk::DescriptorImageInfo const& info)
+{
+	imageInfos.push_back(info);
+}
+
+void PipelineBatch::updateTextureDescriptorSet()
+{
+	// @TODO
+	imageInfos.resize(64, imageInfos[0]);
+	
+	vk::WriteDescriptorSet descriptorWrites[1];
+	descriptorWrites[0].dstSet = texturesSet;
+	descriptorWrites[0].dstBinding = 0;
+	descriptorWrites[0].dstArrayElement = 0;
+	descriptorWrites[0].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+	descriptorWrites[0].descriptorCount = imageInfos.size();
+	descriptorWrites[0].pImageInfo = imageInfos.data();
+
+	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
+}
+
 vk::DeviceSize PipelineBatch::getPipelineConstantsBufferEntrySize() const
 {
 	vk::DeviceSize size = 0;

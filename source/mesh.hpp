@@ -62,5 +62,5 @@ public:
 	vkh::Buffer indexBuffer;
 
 	vkh::Buffer modelBuffer;
-	vk::DescriptorSet modelSet;
+	std::vector<vk::DescriptorSet> modelSets;
 };

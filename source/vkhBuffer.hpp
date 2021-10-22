@@ -30,12 +30,12 @@ namespace vkh
 		[[nodiscard]] void* map();
 		void unmap();
 		
-		void writeData(std::span<uint8> data);
+		void writeData(std::span<uint8> data, size_t offset = 0);
 
 		template<typename T>
-		void writeStruct(T&& struct_)
+		void writeStruct(T&& struct_, size_t offset = 0)
 		{
-			writeData({ reinterpret_cast<uint8*>(&struct_), sizeof(T) });
+			writeData({ reinterpret_cast<uint8*>(&struct_), sizeof(T) }, offset);
 		}
 
 		void copyToImage(vkh::Image& img);
