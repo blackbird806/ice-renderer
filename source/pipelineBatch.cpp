@@ -1,4 +1,5 @@
 #include "pipelineBatch.hpp"
+#include "vkhDeviceContext.hpp"
 
 std::unordered_map<std::string, vkh::ShaderReflector::ReflectedDescriptorSet::Member> PipelineBatch::defaultPipelineConstants;
 

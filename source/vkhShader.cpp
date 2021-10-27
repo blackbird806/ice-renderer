@@ -396,7 +396,9 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	}
 	else
 		throw std::runtime_error("unsuported type");
-	
+
+	// add attributes depending on name
+	mem.attributes = getAttributesFromName(mem.name);
 	return mem;
 }
 

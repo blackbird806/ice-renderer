@@ -14,7 +14,7 @@ layout(set = 2, binding = 0) uniform Material {
     float padding_0;
     int albedoId;
     float padding_1, padding_2, padding_3;
-    vec3 ambient;
+    vec3 ambient_color;
     float padding_4;
     vec3 diffuse;
     float padding_5;
