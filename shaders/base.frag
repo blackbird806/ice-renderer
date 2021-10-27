@@ -14,11 +14,11 @@ layout(set = 2, binding = 0) uniform Material {
     float padding_0;
     int albedoId;
     float padding_1, padding_2, padding_3;
-    vec3 ambient_color;
+    vec3 ambient;
     float padding_4;
     vec3 diffuse;
     float padding_5;
-    vec3 specullar;
+    vec3 specular;
 };
 
 layout(location = 0) in vec2 fragTexCoord;

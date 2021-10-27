@@ -178,9 +178,6 @@
     <ClInclude Include="source\pipelineBatch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\attributes.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="source\imguiThemes.hpp">

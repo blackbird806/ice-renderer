@@ -65,7 +65,6 @@ size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 		return s.getSize();
 	}
 	}, value);
-	return 0;
 }
 
 bool ShaderReflector::ReflectedDescriptorSet::operator==(ReflectedDescriptorSet const& rhs) const
@@ -397,8 +396,10 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	else
 		throw std::runtime_error("unsuported type");
 
-	// add attributes depending on name
-	mem.attributes = getAttributesFromName(mem.name);
+	if (mem.name.find("padding") != std::string::npos) {
+		mem.ignore = true;
+	}
+
 	return mem;
 }
 

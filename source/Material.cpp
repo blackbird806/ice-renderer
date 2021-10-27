@@ -47,6 +47,7 @@ struct ImguiMaterialVisitor
 {
 	void operator()(float f)
 	{
+		if (param.ignore) return;
 		if (ImGui::DragFloat(param.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
 		{
 			param.value = f;
@@ -64,20 +65,9 @@ struct ImguiMaterialVisitor
 
 	void operator()(glm::vec3 f)
 	{
-		auto const colorAttr = getAttribute<ColorAttribute>(param.attributes);
-		if (colorAttr)
+		if (ImGui::ColorEdit3(param.name.c_str(), (float*)&f))
 		{
-			if (ImGui::ColorEdit3(param.name.c_str(), (float*)&f, colorAttr->imguiFlags))
-			{
-				param.value = f;
-			}
-		}
-		else
-		{
-			if (ImGui::DragFloat3(param.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
-			{
-				param.value = f;
-			}
+			param.value = f;
 		}
 	}
 

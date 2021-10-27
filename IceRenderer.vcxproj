@@ -53,7 +53,6 @@
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\attributes.hpp" />
     <ClInclude Include="source\engine.hpp" />
     <ClInclude Include="source\GUILayer.hpp" />
     <ClInclude Include="source\mesh.hpp" />

@@ -8,7 +8,6 @@
 #include <glm/glm.hpp>
 
 #include "ice.hpp"
-#include "attributes.hpp"
 
 namespace vkh
 {
@@ -62,7 +61,8 @@ namespace vkh
 				std::string name;
 				SpvReflectTypeFlags typeFlags = 0;
 				SpvReflectArrayTraits arrayTraits{};
-				Attributes attributes;
+
+				bool ignore = false;
 				
 				// @improve: vector variant (out of scope for now)
 				Type value;
