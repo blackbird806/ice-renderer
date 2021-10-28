@@ -158,7 +158,7 @@ void Scene::computeWorldsTransforms()
 		{
 			HierarchyID const parent = hierarchy[node].parent;
 			localTransforms[node].updateMat();
-			// TODO handle this better
+			
 			if (parent == invalidNodeID)
 			{
 				worlds[node] = localTransforms[node].mat;

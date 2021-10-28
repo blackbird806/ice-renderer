@@ -36,7 +36,7 @@ struct LoadedObj
 	std::vector<tinyobj::material_t> materials;
 };
 
-// @TODO true hash function
+// @Review better hash function ?
 namespace std {
 	template<> struct hash<LoadedObj::Vertex> {
 		size_t operator()(LoadedObj::Vertex const& vertex) const {
@@ -54,7 +54,7 @@ LoadedObj loadObj(std::filesystem::path const& objPath);
 class Mesh : RenderObject
 {
 public:
-	Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh);
+	Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh, uint32 maxFramesInFlight);
 
 	void draw(vk::CommandBuffer cmdBuff);
 

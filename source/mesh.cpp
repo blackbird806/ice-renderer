@@ -92,7 +92,7 @@ LoadedObj loadObj(std::filesystem::path const& objPath)
 	return loadedObj;
 }
 
-Mesh::Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh)
+Mesh::Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh, uint32 maxFramesInflight)
 {
 	{
 		vk::BufferCreateInfo vertexBufferInfo;
@@ -101,9 +101,8 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh)
 		vertexBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 		vma::AllocationCreateInfo allocInfo;
-		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		vertexBuffer.create(ctx, vertexBufferInfo, allocInfo);
-		vertexBuffer.writeData(toSpan<uint8>(mesh.vertices));
+		allocInfo.usage = vma::MemoryUsage::eGpuOnly;
+		vertexBuffer.createWithStaging(ctx, vertexBufferInfo, allocInfo, toSpan<uint8>(mesh.vertices));
 	}
 	{
 		vk::BufferCreateInfo indexBufferInfo;
@@ -112,15 +111,14 @@ Mesh::Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh)
 		indexBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 		vma::AllocationCreateInfo allocInfo;
-		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
-		indexBuffer.create(ctx, indexBufferInfo, allocInfo);
-		indexBuffer.writeData(toSpan<uint8>(mesh.indices));
+		allocInfo.usage = vma::MemoryUsage::eGpuOnly;
+		indexBuffer.createWithStaging(ctx, indexBufferInfo, allocInfo, toSpan<uint8>(mesh.indices));
 		indicesCount = mesh.indices.size();
 	}
 	{
 		vk::BufferCreateInfo uniformBufferInfo;
 		uniformBufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-		uniformBufferInfo.size = sizeof(glm::mat4) * 2; // TODO use max frame in flight here
+		uniformBufferInfo.size = sizeof(glm::mat4) * maxFramesInflight;
 		uniformBufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
 		vma::AllocationCreateInfo allocInfo;

@@ -22,17 +22,42 @@ Buffer& Buffer::operator=(Buffer&& rhs) noexcept
 	return *this;
 }
 
-// @TODO handle buffer creation with staging buffer
 void Buffer::create(vkh::DeviceContext& ctx, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo)
 {
 	deviceContext = &ctx;
-	
+
 	vk::Result res = ctx.gpuAllocator.createBuffer(&bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
 	size = bufferInfo.size;
+	
 	if (res != vk::Result::eSuccess)
-	{
 		throw std::runtime_error("failed to create buffer");
-	}
+}
+
+void Buffer::createWithStaging(vkh::DeviceContext& ctx, vk::BufferCreateInfo bufferInfo,
+	vma::AllocationCreateInfo const& allocInfo, std::span<uint8> data)
+{
+	deviceContext = &ctx;
+
+	vk::BufferCreateInfo stagingBufferInfo;
+	stagingBufferInfo.usage = vk::BufferUsageFlagBits::eTransferSrc;
+	stagingBufferInfo.size = bufferInfo.size;
+	stagingBufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+	vma::AllocationCreateInfo stagingBufferAllocInfo;
+	stagingBufferAllocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+
+	vkh::Buffer stagingBuffer;
+	stagingBuffer.create(ctx, stagingBufferInfo, stagingBufferAllocInfo);
+	stagingBuffer.writeData(data);
+	bufferInfo.usage |= vk::BufferUsageFlagBits::eTransferDst;
+
+	vk::Result res = ctx.gpuAllocator.createBuffer(&bufferInfo, &allocInfo, &buffer, &allocation, nullptr);
+	size = bufferInfo.size;
+
+	stagingBuffer.copyToBuffer(*this);
+	
+	if (res != vk::Result::eSuccess)
+		throw std::runtime_error("failed to create buffer");
 }
 
 void Buffer::destroy()
@@ -82,6 +107,14 @@ void Buffer::copyToImage(vkh::Image& img)
 	region.imageExtent = img.imageInfo.extent;
 
 	cmd->copyBufferToImage(buffer, img.handle, vk::ImageLayout::eTransferDstOptimal, { region });
+}
+
+void Buffer::copyToBuffer(vkh::Buffer& buf)
+{
+	vkh::SingleTimeCommandBuffer cmd(*deviceContext);
+	vk::BufferCopy copyRegion{};
+	copyRegion.size = size;
+	cmd->copyBuffer(buffer, buf.buffer, { copyRegion });
 }
 
 Buffer::~Buffer()

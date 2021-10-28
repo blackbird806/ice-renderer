@@ -114,9 +114,9 @@ int main()
 		gui.handleSwapchainRecreation(context);
 	};
 
-	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"));
+	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"), context.maxFramesInFlight);
 	auto const obj = loadObj("assets/palm_long.obj");
-	Mesh mesh2(context.deviceContext, obj);
+	Mesh mesh2(context.deviceContext, obj, context.maxFramesInFlight);
 
 	vkh::Texture text = loadTexture(context.deviceContext, "assets/texture.jpg");
 	vkh::Texture text2 = loadTexture(context.deviceContext, "assets/grass.png");

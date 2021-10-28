@@ -24,6 +24,7 @@ namespace vkh
 		ICE_NON_COPYABLE_CLASS(Buffer)
 		
 		void create(vkh::DeviceContext& ctx, vk::BufferCreateInfo const& bufferInfo, vma::AllocationCreateInfo const& allocInfo);
+		void createWithStaging(vkh::DeviceContext& ctx, vk::BufferCreateInfo bufferInfo, vma::AllocationCreateInfo const& allocInfo, std::span<uint8> data);
 		
 		void destroy();
 
@@ -39,6 +40,7 @@ namespace vkh
 		}
 
 		void copyToImage(vkh::Image& img);
+		void copyToBuffer(vkh::Buffer& buf);
 		
 		~Buffer();
 		
