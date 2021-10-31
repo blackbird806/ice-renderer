@@ -71,12 +71,14 @@ struct Scene
 	
 	HierarchyID addNode(HierarchyID parent);
 	Object addObject(HierarchyID parent);
+	Object getObject(HierarchyID id);
 	
 	void markDirty(HierarchyID node);
 	void computeWorldsTransforms();
 
 	void imguiDrawSceneTree();
 	void imguiDrawSceneTreeLevel(Iterator first);
+	void imguiDrawInspector();
 
 	Iterator begin();
 	Iterator end();
@@ -88,6 +90,8 @@ struct Scene
 
 	std::vector<std::vector<HierarchyID>> dirtyNodes;
 	int32 maxLevel = 0;
+	
+	HierarchyID focusedId = invalidNodeID;
 
 	std::unordered_map<HierarchyID, RenderObject> renderObjects;
 	

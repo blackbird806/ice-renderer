@@ -48,14 +48,65 @@ void vkh::DeviceContext::checkRequiredExtensions(vk::PhysicalDevice physicalDevi
 	}
 }
 
+static uint rateDeviceSuitability(vk::PhysicalDevice physicalDevice)
+{
+	auto const queueFamiliyProperties = physicalDevice.getQueueFamilyProperties();
+	auto const properties = physicalDevice.getProperties();
+	auto const features = physicalDevice.getFeatures();
+
+	// Application can't function without geometry shaders
+	if (!features.geometryShader)
+		return 0;
+	
+	uint score = 0;
+	// Discrete GPUs have a significant performance advantage
+	if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+		score += 1000;
+	else if (properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
+		score += 300;
+	
+	score += properties.limits.maxImageDimension2D;
+	score += properties.limits.maxBoundDescriptorSets * 20;
+	score += properties.limits.maxDescriptorSetUniformBuffers * 20;
+	score += properties.limits.maxPerStageDescriptorSampledImages * 20;
+
+	return score;
+}
+
+static vk::PhysicalDevice getSuitableDevice(vk::Instance instance) 
+{
+	auto physicalDevices = instance.enumeratePhysicalDevices();
+	std::sort(physicalDevices.begin(), physicalDevices.end(), [](auto& a, auto& b)
+		{
+			return rateDeviceSuitability(a) > rateDeviceSuitability(b);
+		});
+	
+	auto const result = std::find_if(physicalDevices.begin(), physicalDevices.end(), [](vk::PhysicalDevice const& device)
+		{
+			// We want a device with a graphics queue.
+			auto const queueFamilies = device.getQueueFamilyProperties();
+
+			auto const hasGraphicsQueue = std::find_if(queueFamilies.begin(), queueFamilies.end(), [](const vk::QueueFamilyProperties& queueFamily)
+				{
+					return queueFamily.queueCount > 0 && queueFamily.queueFlags & vk::QueueFlagBits::eGraphics;
+				});
+
+			return hasGraphicsQueue != queueFamilies.end();
+		});
+	
+	if (result == physicalDevices.end())
+		throw std::runtime_error("cannot find a suitable device !");
+
+	return *result;
+}
+
 void vkh::DeviceContext::create(vkh::Instance const& instance, vk::SurfaceKHR const& surface,
 	std::span<const char*> requiredExtensions_)
 {
 	allocationCallbacks = instance.allocationCallbacks;
 	requiredExtensions = std::vector(requiredExtensions_.begin(), requiredExtensions_.end());
 
-	// @TODO choose better device
-	physicalDevice = instance.handle->enumeratePhysicalDevices()[0];
+	physicalDevice = getSuitableDevice(*instance.handle);
 
 	checkRequiredExtensions(physicalDevice);
 

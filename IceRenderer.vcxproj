@@ -55,6 +55,7 @@
   <ItemGroup>
     <ClInclude Include="source\engine.hpp" />
     <ClInclude Include="source\GUILayer.hpp" />
+    <ClInclude Include="source\imguiCustomWidgets.hpp" />
     <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\material.hpp" />
     <ClInclude Include="source\pipelineBatch.hpp" />

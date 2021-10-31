@@ -13,6 +13,7 @@
 #include "pipelineBatch.hpp"
 #include "scenegraph.hpp"
 #include "utility.hpp"
+#include "imguiCustomWidgets.hpp"
 
 #undef min
 #undef max
@@ -47,6 +48,23 @@ static vkh::Texture loadTexture(vkh::DeviceContext& ctx, std::string const& path
 	
 	stbi_image_free(pixels);
 	return text;
+}
+
+static auto buildPipeline(VulkanContext& context, vk::RenderPass renderPass, vkh::ShaderModule& vertexShader, vkh::ShaderModule& fragmentShader)
+{
+	int width, height;
+	glfwGetWindowSize(context.window, &width, &height);
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
+		.vertexShader = std::move(vertexShader),
+		.fragmentShader = std::move(fragmentShader),
+		.renderPass = renderPass,
+		.imageExtent = { (uint32)width, (uint32)height},
+		.msaaSamples = context.msaaSamples
+	};
+
+	vkh::GraphicsPipeline pipeline;
+	pipeline.create(context.deviceContext, pipelineInfo);
+	return pipeline;
 }
 
 static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
@@ -103,6 +121,12 @@ int main()
 	gui.init(context);
 	
 	auto [defaultPipeline, defaultRenderPass] = buildDefaultPipelineAndRenderPass(context);
+	vkh::ShaderModule fragmentShader;
+	fragmentShader.create(context.deviceContext, toSpan<uint8>(readBinFile("shaders/frag2.spv")));
+	vkh::ShaderModule vertexShader;
+	vertexShader.create(context.deviceContext, toSpan<uint8>(readBinFile("shaders/vert2.spv")));
+	
+	auto newPipeline = buildPipeline(context, *defaultRenderPass, vertexShader, fragmentShader);
 	auto presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 
 	context.onSwapchainRecreate = [&] ()
@@ -110,6 +134,7 @@ int main()
 		auto pair = buildDefaultPipelineAndRenderPass(context);
 		defaultPipeline = std::move(pair.pipeline);
 		defaultRenderPass = std::move(pair.renderPass);
+		//newPipeline = buildPipeline(context, *defaultRenderPass, vertexShader, fragmentShader);
 		presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 		gui.handleSwapchainRecreation(context);
 	};
@@ -177,6 +202,12 @@ int main()
 	mtrl.updateDescriptorSets();
 	scene.materials.push_back(std::move(mtrl));
 
+	Material mtrl2;
+	mtrl2.create(context.deviceContext, newPipeline, *context.descriptorPool);
+	mtrl2.updateBuffer();
+	mtrl2.updateDescriptorSets();
+	scene.materials.push_back(std::move(mtrl2));
+	
 	for (auto const& objMaterial : obj.materials)
 	{
 		Material mtrlObj;
@@ -210,6 +241,7 @@ int main()
 
 	float time = 0;
 	float deltaTime = 0;
+	glm::vec3 a;
 	while (!glfwWindowShouldClose(window))
 	{
 		auto startFramePoint = std::chrono::high_resolution_clock::now();
@@ -224,15 +256,22 @@ int main()
 
 		ImGui::Text("deltaTime %f", deltaTime);
 		ImGui::ColorEdit3("ClearValue", (float*)&clearsValues[0].color, ImGuiColorEditFlags_PickerHueWheel);
-
+		
 		if (ImGui::Button("Rebuild pipelines"))
 		{
 			context.recreateSwapchain();
 			ImGui::EndFrame();
 			continue;
 		}
-		
+
+		ImGui::Begin("Scene");
 		scene.imguiDrawSceneTree();
+		ImGui::End();
+
+		ImGui::Begin("Inspector");
+		scene.imguiDrawInspector();
+		ImGui::End();
+		
 		scene.computeWorldsTransforms();
 		
 		for (int i = 0; auto& m : scene.materials)

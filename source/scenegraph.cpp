@@ -8,6 +8,7 @@
 #include <format>
 #include <algorithm>
 
+#include "imguiCustomWidgets.hpp"
 
 void Transform::decompose()
 {
@@ -138,6 +139,11 @@ Scene::Object Scene::addObject(HierarchyID parent)
 	return Object{ addNode(parent), *this };
 }
 
+Scene::Object Scene::getObject(HierarchyID id)
+{
+	return Object{ id, *this };
+}
+
 void Scene::markDirty(HierarchyID node)
 {
 	dirtyNodes.resize(maxLevel + 1);
@@ -182,7 +188,7 @@ void Scene::imguiDrawSceneTree()
 void Scene::imguiDrawSceneTreeLevel(Iterator it)
 {
 	int32 const level = (*it).getLevel();
-	
+
 	if (ImGui::TreeNode((*it).getName().c_str()))
 	{
 		for (int i = 0; it != end(); ++it)
@@ -195,22 +201,31 @@ void Scene::imguiDrawSceneTreeLevel(Iterator it)
 			}
 			ImGui::PushID(i++);
 
-			if (ImGui::Selectable(node.getName().c_str()))
+			if (ImGui::Selectable(node.getName().c_str(), node.nodeId == focusedId))
 			{
-				
+				focusedId = node.nodeId;
 			}
-			
-			Transform transform = node.getTransform();
-			
-			if (ImGui::DragFloat3("pos", (float*)&transform.pos))
-				node.setTransform(transform);
-			if (ImGui::DragFloat3("scale", (float*)&transform.scale))
-				node.setTransform(transform);
 
 			ImGui::PopID();
 		}
 		ImGui::TreePop();
 	}
+
+	
+}
+
+void Scene::imguiDrawInspector()
+{
+	if (focusedId == invalidNodeID)
+		return;
+
+	auto obj = getObject(focusedId);
+	Transform transform = obj.getTransform();
+
+	if (guiVec3("position", transform.pos))
+		obj.setTransform(transform);
+	if (guiVec3("scale", transform.scale, glm::vec3(1.0f, 1.0f, 1.0f)))
+		obj.setTransform(transform);
 }
 
 Scene::Iterator Scene::begin()

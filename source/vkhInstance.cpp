@@ -92,7 +92,7 @@ void vkh::Instance::create(const char* appName, const char* engineName, std::spa
 		features.enabledValidationFeatureCount = std::size(enables);
 		features.pEnabledValidationFeatures = enables;
 		debugCreateInfo.pNext = &features;
-		createInfo.pNext = &debugCreateInfo; // @TODO
+		createInfo.pNext = &debugCreateInfo;
 	}
 	else
 	{
