@@ -47,10 +47,10 @@ struct ImguiMaterialVisitor
 {
 	void operator()(float f)
 	{
-		if (param.ignore) return;
-		if (ImGui::DragFloat(param.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
+		if (param.shaderVar.ignore) return;
+		if (ImGui::DragFloat(param.shaderVar.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
 		{
-			param.value = f;
+			param.value<float>() = f;
 		}
 	}
 
@@ -59,7 +59,7 @@ struct ImguiMaterialVisitor
 		int32 i = (uint32)f;
 		if (ImGui::InputInt(param.name.c_str(), &i))
 		{
-			param.value = (uint32)i;
+			param.value<uint32>() = (uint32)i;
 		}
 	}
 
@@ -67,7 +67,7 @@ struct ImguiMaterialVisitor
 	{
 		if (ImGui::ColorEdit3(param.name.c_str(), (float*)&f))
 		{
-			param.value = f;
+			param.value<glm::vec3>() = f;
 		}
 	}
 
@@ -76,26 +76,26 @@ struct ImguiMaterialVisitor
 		ImGui::Text(param.name.c_str());
 	}
 
-	void operator()(vkh::ShaderReflector::ReflectedDescriptorSet::Struct& s)
+	void operator()(vkh::ShaderStruct& s)
 	{
 		for (auto& m : s.members)
 		{
-			std::visit(ImguiMaterialVisitor(m), m.value);
 		}
 	}
 
-	vkh::ShaderReflector::ReflectedDescriptorSet::Member& param;
+	MaterialParameter& param;
 };
 
 void Material::imguiEditor()
 {
 	for (auto& param : parameters)
 	{
-		std::visit(ImguiMaterialVisitor(param), param.value);
+		param.visit<void>(ImguiMaterialVisitor{ param });
+		//std::visit(ImguiMaterialVisitor(param), param.value);
 	}
 }
 
-void Material::updateMember(void* bufferData, size_t& offset, vkh::ShaderReflector::ReflectedDescriptorSet::Member const& mem)
+void Material::updateMember(void* bufferData, size_t& offset, MaterialParameter const& mem)
 {
 	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
 	{
@@ -147,7 +147,7 @@ void Material::updateDescriptorSets()
 	graphicsPipeline->deviceContext->device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
 }
 
-vkh::ShaderReflector::ReflectedDescriptorSet::Member* Material::getParameter(std::string const& name)
+MaterialParameter* Material::getParameter(std::string const& name)
 {
 	// @TODO handle this more elgantly;
 	auto& trueParams = std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(parameters[0].value).members;

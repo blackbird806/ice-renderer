@@ -44,7 +44,7 @@ ShaderReflector::~ShaderReflector()
 	destroy();
 }
 
-size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
+size_t ShaderStruct::getSize() const
 {
 	size_t sum = 0;
 	for (auto const& member : members)
@@ -52,23 +52,78 @@ size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
 	return sum;
 }
 
-size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
+size_t vkh::shaderVarTypeSize(ShaderVarType t)
 {
-	if (typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+	switch (t) {
+	case ShaderVarType::Bool:
+	case ShaderVarType::Int8:
+	case ShaderVarType::Uint8:
+		return 1;
+	case ShaderVarType::Int16: 
+	case ShaderVarType::Uint16: 
+		return 2;
+	case ShaderVarType::ShaderSampler1D:
+	case ShaderVarType::ShaderSampler2D:
+	case ShaderVarType::ShaderSampler3D:
+	case ShaderVarType::Float: 
+	case ShaderVarType::Int32:
+	case ShaderVarType::Uint32: 
+	case ShaderVarType::Vec1: 
+		return 4;
+	case ShaderVarType::Double: 
+	case ShaderVarType::Int64:
+	case ShaderVarType::Uint64:
+	case ShaderVarType::Vec2: 
+		return 8;
+	case ShaderVarType::Vec3:
+		return 12;
+	case ShaderVarType::Vec4:
+	case ShaderVarType::Mat2x2:
+		return 16;
+	case ShaderVarType::Mat3x3:
+		return sizeof(glm::mat3);
+	case ShaderVarType::Mat4x4:
+		return sizeof(glm::mat4);
+	case ShaderVarType::Mat2x3:
+	case ShaderVarType::Mat3x2: 
+		return sizeof(glm::mat2x3);
+	case ShaderVarType::Mat2x4:
+	case ShaderVarType::Mat4x2: 
+		return sizeof(glm::mat2x4);
+	case ShaderVarType::Mat3x4: 
+	case ShaderVarType::Mat4x3:
+		return sizeof(glm::mat3x4);
+	default:
+		throw std::runtime_error("unsuported type");
+	}
+}
+
+size_t ShaderVariable::getSize() const
+{
+	size_t size = 0;
+
+	if (type == ShaderVarType::ShaderStruct)
 	{
-		return arrayElements.sizeRaw();
+		for (auto const& m : structType->members)
+		{
+			size += m.getSize();
+		}
+	}
+	else
+	{
+		size = shaderVarTypeSize(type);
 	}
 	
-	return std::visit(overloaded{
-	[](auto&& e)
+	if (typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
 	{
-		return sizeof(e);
-	},
-	[] (Struct const& s)
-	{
-		return s.getSize();
+		size_t const elemSize = size;
+		for (uint32 d = 0; d < arrayTraits.dims_count; d++)
+		{
+			size += elemSize * arrayTraits.dims[d];
+		}
 	}
-	}, value);
+	
+	return size;
 }
 
 bool ShaderReflector::ReflectedDescriptorSet::operator==(ReflectedDescriptorSet const& rhs) const
@@ -314,9 +369,9 @@ std::vector<SpvReflectDescriptorSet*> ShaderReflector::reflectDescriptorSets() c
 }
 
 // @Improve only float are supported for now
-static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectTypeDescription const& typeDescription)
+static ShaderVariable reflectMember(SpvReflectTypeDescription const& typeDescription)
 {
-	ShaderReflector::ReflectedDescriptorSet::Member mem;
+	ShaderVariable mem;
 	if (typeDescription.struct_member_name != nullptr)
 		mem.name = typeDescription.struct_member_name;
 	mem.typeFlags = typeDescription.type_flags;
@@ -327,16 +382,15 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 		mem.arrayTraits = traits.array;
 		auto nType = typeDescription;
 		nType.type_flags ^= SPV_REFLECT_TYPE_FLAG_ARRAY; // remove the array flag
-		auto const arrayMember = reflectMember(nType); // use value as ENUM @TODO use real enum instead
-		mem.value = arrayMember.value;
+		auto const arrayMember = reflectMember(nType); // @Review
 		for (size_t d = 0; d < traits.array.dims_count; d++)
 		{
-			mem.arrayElements.resizeRaw(mem.arrayElements.sizeRaw() + traits.array.dims[d] * arrayMember.getSize());
+			//mem.arrayElements.resizeRaw(mem.arrayElements.sizeRaw() + traits.array.dims[d] * arrayMember.getSize());
 		}
 	}
 	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_MATRIX)
 	{
-#define ROW_CASE_CASE(COLUMN_DIM, ROW_DIM) case ROW_DIM: mem.value = glm::mat##COLUMN_DIM##x##ROW_DIM##(); break;
+#define ROW_CASE_CASE(COLUMN_DIM, ROW_DIM) case ROW_DIM: mem.type = ShaderVarType::Mat##COLUMN_DIM##x##ROW_DIM##; break;
 #define ROW_CASE(COLUMN_DIM) case COLUMN_DIM: switch(traits.numeric.matrix.row_count) { \
 		ROW_CASE_CASE(COLUMN_DIM, 2) \
 		ROW_CASE_CASE(COLUMN_DIM, 3) \
@@ -358,7 +412,7 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	}
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_VECTOR)
 	{
-#define COMPONENT_CASE(DIM) case DIM: mem.value = glm::vec##DIM##();break;
+#define COMPONENT_CASE(DIM) case DIM: mem.type = ShaderVarType::Vec##DIM;break;
 		switch (traits.numeric.vector.component_count)
 		{
 			COMPONENT_CASE(1)
@@ -373,17 +427,17 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_FLOAT)
 	{
 		if (traits.numeric.scalar.width == 32)
-			mem.value = float(0);
+			mem.type = ShaderVarType::Float;
 		else if (traits.numeric.scalar.width == 64)
-			mem.value = double(0);
+			mem.type = ShaderVarType::Double;
 		else
 			throw std::runtime_error("unsuported float width");
 	}
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_BOOL)
-		mem.value = false;
+		mem.type = ShaderVarType::Bool;
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_INT)
 	{
-#define CASE_WIDTH(W) case W: mem.value =  traits.numeric.scalar.signedness > 0 ? int##W##(0) : uint##W##(0); break;
+#define CASE_WIDTH(W) case W: mem.type = traits.numeric.scalar.signedness > 0 ? ShaderVarType::Int##W : ShaderVarType::Uint##W;  break;
 		switch (traits.numeric.scalar.width)
 		{
 			CASE_WIDTH(8)
@@ -398,12 +452,13 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT)
 	{
 		// @Review ugly code right here
-		ShaderReflector::ReflectedDescriptorSet::Struct struct_;
+		ShaderStruct struct_;
 		for (int j_member = 0; j_member < typeDescription.member_count; j_member++)
 		{
 			struct_.members.emplace_back(reflectMember(typeDescription.members[j_member]));
 		}
-		mem.value = std::move(struct_);
+		mem.type = ShaderVarType::ShaderStruct;
+		mem.structType = std::move(struct_);
 	}
 	else
 		throw std::runtime_error("unsuported type");
@@ -420,7 +475,7 @@ static ShaderReflector::ReflectedDescriptorSet::Binding reflectDescriptorBinding
 	ShaderReflector::ReflectedDescriptorSet::Binding binding;
 	binding.descriptorType = reflBinding.descriptor_type;
 	binding.element = reflectMember(*reflBinding.type_description);
-	if (!std::holds_alternative<ShaderReflector::ReflectedDescriptorSet::Struct>(binding.element.value))
+	if (binding.element.type != ShaderVarType::ShaderStruct)
 		binding.element.name = reflBinding.name;
 	return binding;
 }

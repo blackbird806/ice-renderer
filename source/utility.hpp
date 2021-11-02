@@ -60,6 +60,12 @@ public:
 		arr.resize(n);
 	}
 
+	template<typename T>
+	void resize(size_t n)
+	{
+		arr.resize(sizeof(T) * n);
+	}
+	
 	size_t sizeRaw() const
 	{
 		return arr.size();
