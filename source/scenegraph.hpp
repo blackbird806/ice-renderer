@@ -18,6 +18,7 @@ struct Transform
 	glm::vec3 pos{};
 	glm::vec3 scale{};
 	glm::quat rot{};
+	glm::vec3 eulerRot{};
 
 	// fill pos scale and rot from mat
 	void decompose();

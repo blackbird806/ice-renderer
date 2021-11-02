@@ -166,7 +166,7 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	descriptorSetLayouts.reserve(dsLayout.descriptorSetLayouts.size());
 
 	// add descriptor sets in descriptorSetLayouts in the right set order
-	for (int i =0; i < dsLayout.descriptorSetLayouts.size(); i++)
+	for (int i = 0; i < dsLayout.descriptorSetLayouts.size(); i++)
 	{
 		descriptorSetLayouts.push_back(*dsLayout.descriptorSetLayouts[(DescriptorSetIndex)i]);
 	}

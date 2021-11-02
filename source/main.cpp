@@ -121,12 +121,7 @@ int main()
 	gui.init(context);
 	
 	auto [defaultPipeline, defaultRenderPass] = buildDefaultPipelineAndRenderPass(context);
-	vkh::ShaderModule fragmentShader;
-	fragmentShader.create(context.deviceContext, toSpan<uint8>(readBinFile("shaders/frag2.spv")));
-	vkh::ShaderModule vertexShader;
-	vertexShader.create(context.deviceContext, toSpan<uint8>(readBinFile("shaders/vert2.spv")));
-	
-	auto newPipeline = buildPipeline(context, *defaultRenderPass, vertexShader, fragmentShader);
+
 	auto presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 
 	context.onSwapchainRecreate = [&] ()
@@ -134,7 +129,6 @@ int main()
 		auto pair = buildDefaultPipelineAndRenderPass(context);
 		defaultPipeline = std::move(pair.pipeline);
 		defaultRenderPass = std::move(pair.renderPass);
-		//newPipeline = buildPipeline(context, *defaultRenderPass, vertexShader, fragmentShader);
 		presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 		gui.handleSwapchainRecreation(context);
 	};
@@ -152,7 +146,7 @@ int main()
 	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 
-	for(int i = 0; i < context.maxFramesInFlight; i++)
+	for (int i = 0; i < context.maxFramesInFlight; i++)
 	{
 		vk::DescriptorBufferInfo bufferInfo{};
 		bufferInfo.buffer = mesh.modelBuffer.buffer;
@@ -202,12 +196,6 @@ int main()
 	mtrl.updateDescriptorSets();
 	scene.materials.push_back(std::move(mtrl));
 
-	Material mtrl2;
-	mtrl2.create(context.deviceContext, newPipeline, *context.descriptorPool);
-	mtrl2.updateBuffer();
-	mtrl2.updateDescriptorSets();
-	scene.materials.push_back(std::move(mtrl2));
-	
 	for (auto const& objMaterial : obj.materials)
 	{
 		Material mtrlObj;
@@ -241,7 +229,7 @@ int main()
 
 	float time = 0;
 	float deltaTime = 0;
-	glm::vec3 a;
+	
 	while (!glfwWindowShouldClose(window))
 	{
 		auto startFramePoint = std::chrono::high_resolution_clock::now();
@@ -268,7 +256,7 @@ int main()
 		scene.imguiDrawSceneTree();
 		ImGui::End();
 
-		ImGui::Begin("Inspector");
+		ImGui::Begin("Properties");
 		scene.imguiDrawInspector();
 		ImGui::End();
 		
@@ -308,9 +296,9 @@ int main()
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipeline);
 
 			vk::DescriptorSet sets0[] = { defaultPipelineBatch.pipelineConstantsSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 0, std::size(sets0), sets0, 0, nullptr);
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::PipelineConstants, std::size(sets0), sets0, 0, nullptr);
 			vk::DescriptorSet sets1[] = { defaultPipelineBatch.texturesSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 1, std::size(sets1), sets1, 0, nullptr);
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Textures, std::size(sets1), sets1, 0, nullptr);
 
 			uint32 lastMaterialID = -1;
 			for (auto const& [id, object] : scene.renderObjects)
@@ -320,12 +308,12 @@ int main()
 				if (object.materialID != lastMaterialID)
 				{
 					vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSet };
-					cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 2, std::size(sets2), sets2, 0, nullptr);
+					cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Materials, std::size(sets2), sets2, 0, nullptr);
 					lastMaterialID = object.materialID;
 				}
 				
 				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
-				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, 3, std::size(sets3), sets3, 0, nullptr);
+				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::DrawCall, std::size(sets3), sets3, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
 		

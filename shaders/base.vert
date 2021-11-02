@@ -1,12 +1,12 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform PipelineConstants {
+layout(set = 1, binding = 0) uniform PipelineConstants {
     mat4 view;
     mat4 proj;
     float time;
 };
 
-layout(set = 3, binding = 0) uniform Drawcall {
+layout(set = 4, binding = 0) uniform Drawcall {
     mat4 model;
 };
 

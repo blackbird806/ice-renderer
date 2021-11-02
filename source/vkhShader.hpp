@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "ice.hpp"
+#include "utility.hpp"
 
 namespace vkh
 {
@@ -64,8 +65,9 @@ namespace vkh
 
 				bool ignore = false;
 				
-				// @improve: vector variant (out of scope for now)
 				Type value;
+				// @improve: better version of vector variant (out of scope for now)
+				VectorAny arrayElements;
 			};
 
 			struct Binding

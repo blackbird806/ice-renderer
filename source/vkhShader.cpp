@@ -2,7 +2,6 @@
 
 #include <SPIRV-Reflect/spirv_reflect.h>
 
-
 #include "utility.hpp"
 #include "vkhDeviceContext.hpp"
 
@@ -55,6 +54,11 @@ size_t ShaderReflector::ReflectedDescriptorSet::Struct::getSize() const
 
 size_t ShaderReflector::ReflectedDescriptorSet::Member::getSize() const
 {
+	if (typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+	{
+		return arrayElements.sizeRaw();
+	}
+	
 	return std::visit(overloaded{
 	[](auto&& e)
 	{
@@ -321,6 +325,14 @@ static ShaderReflector::ReflectedDescriptorSet::Member reflectMember(SpvReflectT
 	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
 	{
 		mem.arrayTraits = traits.array;
+		auto nType = typeDescription;
+		nType.type_flags ^= SPV_REFLECT_TYPE_FLAG_ARRAY; // remove the array flag
+		auto const arrayMember = reflectMember(nType); // use value as ENUM @TODO use real enum instead
+		mem.value = arrayMember.value;
+		for (size_t d = 0; d < traits.array.dims_count; d++)
+		{
+			mem.arrayElements.resizeRaw(mem.arrayElements.sizeRaw() + traits.array.dims[d] * arrayMember.getSize());
+		}
 	}
 	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_MATRIX)
 	{

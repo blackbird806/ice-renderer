@@ -11,7 +11,8 @@ namespace vkh
 
 	enum DescriptorSetIndex : size_t
 	{
-		PipelineConstants = 0,
+		Lights = 0,
+		PipelineConstants,
 		Textures,
 		Materials,
 		DrawCall,

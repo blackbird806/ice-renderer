@@ -224,6 +224,11 @@ void Scene::imguiDrawInspector()
 
 	if (guiVec3("position", transform.pos))
 		obj.setTransform(transform);
+	if (guiVec3("rotation", transform.eulerRot))
+	{
+		transform.rot = glm::quat(glm::radians(transform.eulerRot));
+		obj.setTransform(transform);
+	}
 	if (guiVec3("scale", transform.scale, glm::vec3(1.0f, 1.0f, 1.0f)))
 		obj.setTransform(transform);
 }

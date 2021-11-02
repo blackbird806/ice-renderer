@@ -51,7 +51,6 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 		descriptorSetLayouts.emplace(static_cast<DescriptorSetIndex>(layoutData.set_number),
 			deviceContext->device.createDescriptorSetLayoutUnique(layoutData.create_info));
 	}
-	
 }
 
 void ShaderDescriptorLayout::destroy()
