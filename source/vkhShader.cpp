@@ -62,9 +62,9 @@ size_t vkh::shaderVarTypeSize(ShaderVarType t)
 	case ShaderVarType::Int16: 
 	case ShaderVarType::Uint16: 
 		return 2;
-	case ShaderVarType::ShaderSampler1D:
-	case ShaderVarType::ShaderSampler2D:
-	case ShaderVarType::ShaderSampler3D:
+	case ShaderVarType::Sampler1D:
+	case ShaderVarType::Sampler2D:
+	case ShaderVarType::Sampler3D:
 	case ShaderVarType::Float: 
 	case ShaderVarType::Int32:
 	case ShaderVarType::Uint32: 
@@ -97,6 +97,41 @@ size_t vkh::shaderVarTypeSize(ShaderVarType t)
 		throw std::runtime_error("unsuported type");
 	}
 }
+
+#define FROM_TYPE_SPECIALISATION(type, enumVal) ShaderVarType vkh::fromType(type) { return ShaderVarType::enumVal;}
+
+FROM_TYPE_SPECIALISATION(bool, Bool)
+FROM_TYPE_SPECIALISATION(float, Float)
+FROM_TYPE_SPECIALISATION(double, Double)
+FROM_TYPE_SPECIALISATION(int8, Int8)
+FROM_TYPE_SPECIALISATION(int16, Int16)
+FROM_TYPE_SPECIALISATION(int32, Int32)
+FROM_TYPE_SPECIALISATION(int64, Int64)
+FROM_TYPE_SPECIALISATION(uint8, Uint8)
+FROM_TYPE_SPECIALISATION(uint16, Uint16)
+FROM_TYPE_SPECIALISATION(uint32, Uint32)
+FROM_TYPE_SPECIALISATION(uint64, Uint64)
+
+FROM_TYPE_SPECIALISATION(glm::vec1, Vec1)
+FROM_TYPE_SPECIALISATION(glm::vec2, Vec2)
+FROM_TYPE_SPECIALISATION(glm::vec3, Vec3)
+FROM_TYPE_SPECIALISATION(glm::vec4, Vec4)
+
+FROM_TYPE_SPECIALISATION(glm::mat2, Mat2x2)
+FROM_TYPE_SPECIALISATION(glm::mat3, Mat3x3)
+FROM_TYPE_SPECIALISATION(glm::mat4, Mat4x4)
+FROM_TYPE_SPECIALISATION(glm::mat2x3, Mat2x3)
+FROM_TYPE_SPECIALISATION(glm::mat3x2, Mat3x2)
+
+FROM_TYPE_SPECIALISATION(glm::mat4x2, Mat4x2)
+FROM_TYPE_SPECIALISATION(glm::mat2x4, Mat2x4)
+FROM_TYPE_SPECIALISATION(glm::mat3x4, Mat3x4)
+FROM_TYPE_SPECIALISATION(glm::mat4x3, Mat4x3)
+
+FROM_TYPE_SPECIALISATION(ShaderSampler1D, Sampler1D)
+FROM_TYPE_SPECIALISATION(ShaderSampler2D, Sampler2D)
+FROM_TYPE_SPECIALISATION(ShaderSampler3D, Sampler3D)
+FROM_TYPE_SPECIALISATION(ShaderStruct, ShaderStruct)
 
 size_t ShaderVariable::getSize() const
 {
@@ -383,10 +418,6 @@ static ShaderVariable reflectMember(SpvReflectTypeDescription const& typeDescrip
 		auto nType = typeDescription;
 		nType.type_flags ^= SPV_REFLECT_TYPE_FLAG_ARRAY; // remove the array flag
 		auto const arrayMember = reflectMember(nType); // @Review
-		for (size_t d = 0; d < traits.array.dims_count; d++)
-		{
-			//mem.arrayElements.resizeRaw(mem.arrayElements.sizeRaw() + traits.array.dims[d] * arrayMember.getSize());
-		}
 	}
 	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_MATRIX)
 	{
@@ -466,7 +497,8 @@ static ShaderVariable reflectMember(SpvReflectTypeDescription const& typeDescrip
 	if (mem.name.find("padding") != std::string::npos) {
 		mem.ignore = true;
 	}
-
+	if (mem.type != ShaderVarType::ShaderStruct)
+		mem.arrayElements.resizeRaw(mem.getSize());
 	return mem;
 }
 

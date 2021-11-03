@@ -46,13 +46,13 @@ public:
 	template<typename T>
 	T& get(size_t i)
 	{
-		return *static_cast<T*>(arr.data())[i];
+		return reinterpret_cast<T*>(arr.data())[i];
 	}
 
 	template<typename T>
 	T const& get(size_t i) const
 	{
-		return *static_cast<T*>(arr.data())[i];
+		return reinterpret_cast<T const*>(arr.data())[i];
 	}
 
 	void resizeRaw(size_t n)
@@ -66,9 +66,20 @@ public:
 		arr.resize(sizeof(T) * n);
 	}
 	
-	size_t sizeRaw() const
+	size_t sizeRaw() const noexcept
 	{
 		return arr.size();
+	}
+
+	template<typename T>
+	size_t size() const noexcept
+	{
+		return arr.size() / sizeof(T);
+	}
+	
+	std::byte const* data() const noexcept
+	{
+		return arr.data();
 	}
 	
 private:

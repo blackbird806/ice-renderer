@@ -1,6 +1,7 @@
 #include "material.hpp"
 
 #include <tiny/tiny_obj_loader.h>
+#include <format>
 
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
@@ -47,19 +48,32 @@ struct ImguiMaterialVisitor
 {
 	void operator()(float f)
 	{
-		if (param.shaderVar.ignore) return;
-		if (ImGui::DragFloat(param.shaderVar.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
+		if (param.ignore) return;
+		if (param.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
 		{
-			param.value<float>() = f;
+			for (int i = 0; i < param.getSize() / vkh::shaderVarTypeSize(param.type); i++)
+			{
+				float f = param.arrayElements.get<float>(i);
+				if (ImGui::DragFloat(std::format("{}_{}", param.name, i).c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
+				{
+					param.arrayElements.get<float>(i) = f;
+				}
+			}
+		}
+		else
+		{
+			if (ImGui::DragFloat(param.name.c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
+			{
+				param.value<float>() = f;
+			}
 		}
 	}
 
-	void operator()(uint32 f)
+	void operator()(int32 i)
 	{
-		int32 i = (uint32)f;
 		if (ImGui::InputInt(param.name.c_str(), &i))
 		{
-			param.value<uint32>() = (uint32)i;
+			param.value<int32>() = i;
 		}
 	}
 
@@ -78,12 +92,15 @@ struct ImguiMaterialVisitor
 
 	void operator()(vkh::ShaderStruct& s)
 	{
-		for (auto& m : s.members)
+		for (int i = 0; auto& m : s.members)
 		{
+			ImGui::PushID(i++);
+			m.visit<void>(ImguiMaterialVisitor{m});
+			ImGui::PopID();
 		}
 	}
-
-	MaterialParameter& param;
+	
+	vkh::ShaderVariable& param;
 };
 
 void Material::imguiEditor()
@@ -91,28 +108,22 @@ void Material::imguiEditor()
 	for (auto& param : parameters)
 	{
 		param.visit<void>(ImguiMaterialVisitor{ param });
-		//std::visit(ImguiMaterialVisitor(param), param.value);
 	}
 }
 
-void Material::updateMember(void* bufferData, size_t& offset, MaterialParameter const& mem)
+void Material::updateMember(void* bufferData, size_t& offset, vkh::ShaderVariable const& mem)
 {
-	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+	if (mem.type == vkh::ShaderVarType::ShaderStruct)
 	{
-		// array/structs inside materials are unsuported for now
-		assert(false);
-	}
-	if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_STRUCT)
-	{
-		for (auto const& e : std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(mem.value).members)
+		for (auto const& e : mem.structType->members)
 		{
 			updateMember(bufferData, offset, e);
 		}
 	}
 	else
 	{
-		size_t const size = mem.getSize();
-		memcpy((uint8*)bufferData + offset, &mem.value, size);
+		size_t const size = mem.arrayElements.sizeRaw();
+		memcpy((uint8*)bufferData + offset, mem.arrayElements.data(), size);
 		offset += size;
 	}
 }
@@ -147,10 +158,10 @@ void Material::updateDescriptorSets()
 	graphicsPipeline->deviceContext->device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
 }
 
-MaterialParameter* Material::getParameter(std::string const& name)
+vkh::ShaderVariable* Material::getParameter(std::string const& name)
 {
 	// @TODO handle this more elgantly;
-	auto& trueParams = std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(parameters[0].value).members;
+	auto& trueParams = parameters[0].structType->members;
 	auto const it = std::find_if(trueParams.begin(), trueParams.end(), [&name] (auto const& e)
 		{
 			return e.name == name;
@@ -162,14 +173,14 @@ MaterialParameter* Material::getParameter(std::string const& name)
 
 void updateFromObjMaterial(tinyobj::material_t const& objMtrl, Material& mtrl)
 {
-#define PARAMETER_CASE_VEC3(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value = glm::vec3(objMtrl.NAME[0], objMtrl.NAME[1], objMtrl.NAME[2]);
+#define PARAMETER_CASE_VEC3(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value<glm::vec3>() = glm::vec3(objMtrl.NAME[0], objMtrl.NAME[1], objMtrl.NAME[2]);
 	PARAMETER_CASE_VEC3(ambient);
 	PARAMETER_CASE_VEC3(diffuse);
 	PARAMETER_CASE_VEC3(specular);
 	PARAMETER_CASE_VEC3(transmittance);
 	PARAMETER_CASE_VEC3(emission);
 
-#define PARAMETER_CASE_SINGLE(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value = objMtrl.NAME;
+#define PARAMETER_CASE_SINGLE(NAME) if (auto* NAME = mtrl.getParameter(#NAME)) NAME->value<decltype(objMtrl.NAME)>() = objMtrl.NAME;
 	PARAMETER_CASE_SINGLE(shininess);
 	PARAMETER_CASE_SINGLE(ior);
 	PARAMETER_CASE_SINGLE(dissolve);

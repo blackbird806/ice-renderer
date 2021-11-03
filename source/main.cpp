@@ -109,7 +109,7 @@ int main()
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Ice Renderer", nullptr, nullptr);
 	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 	
 	VulkanContext context(window);
@@ -277,9 +277,9 @@ int main()
 		proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.1f, 10.0f);
 		proj[1][1] *= -1;
 
-		PipelineBatch::defaultPipelineConstants["view"] = { .value = view };
-		PipelineBatch::defaultPipelineConstants["proj"] = { .value = proj };
-		PipelineBatch::defaultPipelineConstants["time"] = { .value = time };
+		PipelineBatch::defaultPipelineConstants["view"].build(view);
+		PipelineBatch::defaultPipelineConstants["proj"].build(proj);
+		PipelineBatch::defaultPipelineConstants["time"].build(time);
 
 		defaultPipelineBatch.updatePipelineConstantBuffer();
 		

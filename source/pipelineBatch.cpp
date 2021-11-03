@@ -1,7 +1,7 @@
 #include "pipelineBatch.hpp"
 #include "vkhDeviceContext.hpp"
 
-std::unordered_map<std::string, vkh::ShaderReflector::ReflectedDescriptorSet::Member> PipelineBatch::defaultPipelineConstants;
+std::unordered_map<std::string, vkh::ShaderVariable> PipelineBatch::defaultPipelineConstants;
 
 void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_)
 {
@@ -49,20 +49,21 @@ void PipelineBatch::updatePipelineConstantsSet() const
 	pipeline->deviceContext->device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 }
 
+// @Review struct architecture
 // @Performance cache results
 void PipelineBatch::updatePipelineConstantBuffer()
 {
 	size_t offset = 0;
 	for (auto const& binding : pipeline->dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::PipelineConstants].bindings)
 	{
-		for(auto const& mem : std::get<vkh::ShaderReflector::ReflectedDescriptorSet::Struct>(binding.element.value).members)
+		for(auto const& mem : binding.element.structType->members)
 		{
 			auto const& it = defaultPipelineConstants.find(mem.name);
-			if (it != defaultPipelineConstants.end())
+			if (it != defaultPipelineConstants.end() && it->second.type != vkh::ShaderVarType::ShaderStruct /*@TODO handle structs*/)
 			{
 				auto const size = it->second.getSize();
 				// @TODO handle member alignement
-				pipelineConstantBuffer.writeData({ (uint8*)&it->second.value, size}, offset);
+				pipelineConstantBuffer.writeData({ (uint8*)it->second.arrayElements.data(), size }, offset);
 				offset += size;
 			}
 		}

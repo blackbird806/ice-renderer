@@ -8,7 +8,7 @@
 
 struct PipelineBatch
 {
-	static std::unordered_map<std::string, vkh::ShaderReflector::ReflectedDescriptorSet::Member> defaultPipelineConstants;
+	static std::unordered_map<std::string, vkh::ShaderVariable> defaultPipelineConstants;
 
 	void create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_);
 
