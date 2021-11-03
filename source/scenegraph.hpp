@@ -8,6 +8,7 @@
 #include "material.hpp"
 #include "mesh.hpp"
 #include "renderObject.hpp"
+#include "SceneLight.hpp"
 
 using HierarchyID = int32;
 
@@ -44,6 +45,7 @@ struct Scene
 	struct Object
 	{
 		Object& setRenderObject(RenderObject const& renderObj);
+		Object& setLight(SceneLight const& light);
 		Object& setName(std::string const& name);
 		Object& setLocalMatrix(glm::mat4 const& mtr);
 		Object& setTransform(Transform const& tr);
@@ -81,6 +83,8 @@ struct Scene
 	void imguiDrawSceneTreeLevel(Iterator first);
 	void imguiDrawInspector();
 
+	LightBuffer getLightBuffer() const;
+	
 	Iterator begin();
 	Iterator end();
 	
@@ -95,6 +99,7 @@ struct Scene
 	HierarchyID focusedId = invalidNodeID;
 
 	std::unordered_map<HierarchyID, RenderObject> renderObjects;
+	std::unordered_map<HierarchyID, SceneLight> lights;
 	
 	// render resources
 	std::vector<Mesh> meshes;

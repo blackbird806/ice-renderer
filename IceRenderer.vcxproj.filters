@@ -181,6 +181,9 @@
     <ClInclude Include="source\imguiCustomWidgets.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="source\SceneLight.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="source\imguiThemes.hpp">

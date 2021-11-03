@@ -29,7 +29,7 @@ struct PipelineBatch
 	// @Review big material buffer ? (bindless ? dynamic offset ?)
 	
 	std::vector<std::vector<vk::DescriptorImageInfo>> imageInfosArray;
-
+	// @Review delete descriptors sets ?
 	vk::DescriptorSet pipelineConstantsSet;
 	vk::DescriptorSet texturesSet;
 };

@@ -30,6 +30,12 @@ Scene::Object& Scene::Object::setRenderObject(RenderObject const& renderObj)
 	return *this;
 }
 
+Scene::Object& Scene::Object::setLight(SceneLight const& light)
+{
+	scene.lights[nodeId] = light;
+	return *this;
+}
+
 Scene::Object& Scene::Object::setName(std::string const& name)
 {
 	scene.nodeNames[nodeId] = name;
@@ -231,6 +237,27 @@ void Scene::imguiDrawInspector()
 	}
 	if (guiVec3("scale", transform.scale, glm::vec3(1.0f, 1.0f, 1.0f)))
 		obj.setTransform(transform);
+
+	if (lights.contains(focusedId))
+	{
+		SceneLight& light = lights[focusedId];
+		ImGui::ColorEdit3("Intensity", (float*)&light.intensity, ImGuiColorEditFlags_PickerHueWheel);
+		guiVec3("direction", light.dir);
+		light.dir = glm::normalize(light.dir);
+	}
+}
+
+LightBuffer Scene::getLightBuffer() const
+{
+	LightBuffer buff;
+	buff.count = lights.size();
+	assert(buff.count <= 16);
+	for (int i = 0; auto [id, l] : lights)
+	{
+		auto worldPos = glm::vec4(localTransforms[id].pos, 1.0f) * worlds[id];
+		buff.lights[i++] = ShaderLight{ .pos = worldPos, .dir = l.dir, .intensity = l.intensity};
+	}
+	return buff;
 }
 
 Scene::Iterator Scene::begin()

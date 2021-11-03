@@ -5,11 +5,12 @@ struct Light {
     float padding_00;
     vec3 dir;
     float padding_01;
-    vec4 intensity;
+    vec3 intensity;
 };
 
 layout(set = 0, binding = 0) uniform Lights {
     Light lights[16];
+    uint nlights;
 };
 
 layout(set = 1, binding = 0) uniform PipelineConstants {
@@ -39,5 +40,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
-    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(diffuse, 1.0);
+    outColor = texture(albedoSamplers[albedoId], fragTexCoord) * vec4(lights[0].intensity, 1.0);
 }

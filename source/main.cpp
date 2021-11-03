@@ -218,6 +218,10 @@ int main()
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)));
 
 	scene.addObject(root.nodeId)
+		.setName("light")
+		.setLight({ glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
+	
+	scene.addObject(root.nodeId)
 		.setName("cube")
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)))
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
@@ -227,6 +231,35 @@ int main()
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f)))
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 1, .meshID = 1 });
 
+	vkh::Buffer lightsBuffer;
+	{
+		vk::BufferCreateInfo bufferInfo;
+		bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+		bufferInfo.size = sizeof(LightBuffer);
+		bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+		lightsBuffer.create(context.deviceContext, bufferInfo, allocInfo);
+	}
+
+	vk::DescriptorSet lightSet = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Lights, 1)[0];
+
+	vk::DescriptorBufferInfo lightBufferInfo{};
+	lightBufferInfo.buffer = lightsBuffer.buffer;
+	lightBufferInfo.offset = 0;
+	lightBufferInfo.range = VK_WHOLE_SIZE;
+	
+	vk::WriteDescriptorSet lightWrite;
+	lightWrite.dstSet = lightSet;
+	lightWrite.dstBinding = 0;
+	lightWrite.dstArrayElement = 0;
+	lightWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+	lightWrite.descriptorCount = 1;
+	lightWrite.pBufferInfo = &lightBufferInfo;
+
+	context.deviceContext.device.updateDescriptorSets(1, &lightWrite, 0, nullptr);
+	
 	float time = 0;
 	float deltaTime = 0;
 	
@@ -261,6 +294,8 @@ int main()
 		ImGui::End();
 		
 		scene.computeWorldsTransforms();
+
+		lightsBuffer.writeStruct(scene.getLightBuffer());
 		
 		for (int i = 0; auto& m : scene.materials)
 		{
@@ -295,8 +330,8 @@ int main()
 		
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipeline);
 
-			vk::DescriptorSet sets0[] = { defaultPipelineBatch.pipelineConstantsSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::PipelineConstants, std::size(sets0), sets0, 0, nullptr);
+			vk::DescriptorSet sets0[] = { lightSet , defaultPipelineBatch.pipelineConstantsSet };
+			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Lights /*lights then pipeline consts*/, std::size(sets0), sets0, 0, nullptr);
 			vk::DescriptorSet sets1[] = { defaultPipelineBatch.texturesSet };
 			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Textures, std::size(sets1), sets1, 0, nullptr);
 
