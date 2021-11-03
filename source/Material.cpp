@@ -69,6 +69,14 @@ struct ImguiMaterialVisitor
 		}
 	}
 
+	void operator()(uint32 b)
+	{
+		if (ImGui::Checkbox(param.name.c_str(), (bool*)&b))
+		{
+			param.value<bool>() = b;
+		}
+	}
+	
 	void operator()(int32 i)
 	{
 		if (ImGui::InputInt(param.name.c_str(), &i))

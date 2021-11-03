@@ -51,7 +51,7 @@ Scene::Object& Scene::Object::setLocalMatrix(glm::mat4 const& mtr)
 	return *this;
 }
 
-Scene::Object& Scene::Object::setTransform(Transform const& tr)
+Scene::Object& Scene::Object::setLocalTransform(Transform const& tr)
 {
 	scene.markDirty(nodeId);
 	return setTransformNoDirty(tr);
@@ -61,6 +61,18 @@ Scene::Object& Scene::Object::setTransformNoDirty(Transform const& tr)
 {
 	scene.localTransforms[nodeId] = tr;
 	return *this;
+}
+
+glm::vec3 Scene::Object::getWorldPosition() const
+{
+	auto const r = glm::vec4(scene.localTransforms[nodeId].pos, 1.0f) * scene.worlds[nodeId];
+	return glm::vec3(r.x, r.y, r.z);
+}
+
+glm::vec3 Scene::Object::getWorldEulerRotation() const
+{
+	auto const r = glm::vec4(scene.localTransforms[nodeId].eulerRot, 1.0f) * scene.worlds[nodeId];
+	return glm::vec3(r.x, r.y, r.z);
 }
 
 std::string Scene::Object::getName() const
@@ -184,7 +196,7 @@ void Scene::computeWorldsTransforms()
 
 void Scene::imguiDrawSceneTree()
 {
-	if (ImGui::TreeNode("Scene"))
+	if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		imguiDrawSceneTreeLevel(begin());
 		ImGui::TreePop();
@@ -195,7 +207,7 @@ void Scene::imguiDrawSceneTreeLevel(Iterator it)
 {
 	int32 const level = (*it).getLevel();
 
-	if (ImGui::TreeNode((*it).getName().c_str()))
+	if (ImGui::TreeNodeEx((*it).getName().c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		for (int i = 0; it != end(); ++it)
 		{
@@ -229,14 +241,14 @@ void Scene::imguiDrawInspector()
 	Transform transform = obj.getTransform();
 
 	if (guiVec3("position", transform.pos))
-		obj.setTransform(transform);
+		obj.setLocalTransform(transform);
 	if (guiVec3("rotation", transform.eulerRot))
 	{
 		transform.rot = glm::quat(glm::radians(transform.eulerRot));
-		obj.setTransform(transform);
+		obj.setLocalTransform(transform);
 	}
 	if (guiVec3("scale", transform.scale, glm::vec3(1.0f, 1.0f, 1.0f)))
-		obj.setTransform(transform);
+		obj.setLocalTransform(transform);
 
 	if (lights.contains(focusedId))
 	{

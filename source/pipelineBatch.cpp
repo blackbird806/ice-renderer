@@ -1,5 +1,6 @@
 #include "pipelineBatch.hpp"
 #include "vkhDeviceContext.hpp"
+#include "vkhTexture.hpp"
 
 std::unordered_map<std::string, vkh::ShaderVariable> PipelineBatch::defaultPipelineConstants;
 
@@ -70,9 +71,15 @@ void PipelineBatch::updatePipelineConstantBuffer()
 	}
 }
 
-void PipelineBatch::addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info)
+void PipelineBatch::addTexture(uint32 binding, vkh::Texture const& text)
 {
 	assert(binding < imageInfosArray.size());
+
+	vk::DescriptorImageInfo info;
+	info.sampler = *text.sampler;
+	info.imageView = *text.imageView;
+	info.imageLayout = text.image.getLayout();
+	
 	imageInfosArray[binding].push_back(info);
 }
 

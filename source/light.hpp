@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "ice.hpp"
+
 struct SceneLight
 {
 	glm::vec3 dir;

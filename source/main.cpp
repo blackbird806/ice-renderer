@@ -13,7 +13,6 @@
 #include "pipelineBatch.hpp"
 #include "scenegraph.hpp"
 #include "utility.hpp"
-#include "imguiCustomWidgets.hpp"
 
 #undef min
 #undef max
@@ -134,11 +133,13 @@ int main()
 	};
 
 	Mesh mesh(context.deviceContext, loadObj("assets/cube.obj"), context.maxFramesInFlight);
-	auto const obj = loadObj("assets/palm_long.obj");
+	auto const obj = loadObj("assets/Nature_Snow/vdbmabvva.obj");
 	Mesh mesh2(context.deviceContext, obj, context.maxFramesInFlight);
 
 	vkh::Texture text = loadTexture(context.deviceContext, "assets/texture.jpg");
-	vkh::Texture text2 = loadTexture(context.deviceContext, "assets/grass.png");
+	vkh::Texture snowAlbedo = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Albedo.jpg");
+	vkh::Texture snowNormal = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Normal.jpg");
+	vkh::Texture snowRoughness = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Roughness.jpg");
 
 	PipelineBatch defaultPipelineBatch;
 	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool, 32);
@@ -176,18 +177,11 @@ int main()
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
 
-	vk::DescriptorImageInfo imageInfo{};
-	imageInfo.sampler = *text.sampler;
-	imageInfo.imageView = *text.imageView;
-	imageInfo.imageLayout = text.image.getLayout();
-
-	vk::DescriptorImageInfo imageInfo2{};
-	imageInfo2.sampler = *text2.sampler;
-	imageInfo2.imageView = *text2.imageView;
-	imageInfo2.imageLayout = text2.image.getLayout();
-
-	defaultPipelineBatch.addImageInfo(0, imageInfo);
-	defaultPipelineBatch.addImageInfo(1, imageInfo2);
+	defaultPipelineBatch.addTexture(0, text);
+	defaultPipelineBatch.addTexture(0, snowAlbedo);
+	defaultPipelineBatch.addTexture(1, snowNormal);
+	defaultPipelineBatch.addTexture(2, snowRoughness);
+	
 	defaultPipelineBatch.updateTextureDescriptorSet();
 	
 	Material mtrl;
@@ -220,6 +214,9 @@ int main()
 	scene.addObject(root.nodeId)
 		.setName("light")
 		.setLight({ glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f) });
+
+	auto cameraNode = scene.addObject(root.nodeId)
+							.setName("camera");
 	
 	scene.addObject(root.nodeId)
 		.setName("cube")
@@ -229,7 +226,7 @@ int main()
 	scene.addObject(root.nodeId)
 		.setName("boat")
 		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f)))
-		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 1, .meshID = 1 });
+		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
 
 	vkh::Buffer lightsBuffer;
 	{
@@ -308,8 +305,8 @@ int main()
 
 		glm::mat4 view;
 		glm::mat4 proj;
-		view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.1f, 10.0f);
+		view = glm::lookAt(cameraNode.getWorldPosition(), cameraNode.getWorldPosition() + glm::vec3(0, 0, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.01f, 10000.0f);
 		proj[1][1] *= -1;
 
 		PipelineBatch::defaultPipelineConstants["view"].build(view);

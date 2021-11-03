@@ -8,7 +8,7 @@
 #include "material.hpp"
 #include "mesh.hpp"
 #include "renderObject.hpp"
-#include "SceneLight.hpp"
+#include "light.hpp"
 
 using HierarchyID = int32;
 
@@ -17,7 +17,7 @@ HierarchyID constexpr invalidNodeID = -1;
 struct Transform
 {
 	glm::vec3 pos{};
-	glm::vec3 scale{};
+	glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::quat rot{};
 	glm::vec3 eulerRot{};
 
@@ -48,8 +48,11 @@ struct Scene
 		Object& setLight(SceneLight const& light);
 		Object& setName(std::string const& name);
 		Object& setLocalMatrix(glm::mat4 const& mtr);
-		Object& setTransform(Transform const& tr);
+		Object& setLocalTransform(Transform const& tr);
 		Object& setTransformNoDirty(Transform const& tr);
+
+		glm::vec3 getWorldPosition() const;
+		glm::vec3 getWorldEulerRotation() const;
 
 		std::string getName() const;
 		int32 getLevel() const;
@@ -84,7 +87,7 @@ struct Scene
 	void imguiDrawInspector();
 
 	LightBuffer getLightBuffer() const;
-	
+
 	Iterator begin();
 	Iterator end();
 	
@@ -100,6 +103,8 @@ struct Scene
 
 	std::unordered_map<HierarchyID, RenderObject> renderObjects;
 	std::unordered_map<HierarchyID, SceneLight> lights;
+	
+	HierarchyID camId = invalidNodeID;
 	
 	// render resources
 	std::vector<Mesh> meshes;

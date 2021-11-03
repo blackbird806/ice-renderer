@@ -6,6 +6,10 @@
 #include "vkhBuffer.hpp"
 #include "vkhGraphicsPipeline.hpp"
 
+namespace vkh {
+	struct Texture;
+}
+
 struct PipelineBatch
 {
 	static std::unordered_map<std::string, vkh::ShaderVariable> defaultPipelineConstants;
@@ -15,7 +19,7 @@ struct PipelineBatch
 	void updatePipelineConstantsSet() const;
 	void updatePipelineConstantBuffer();
 
-	void addImageInfo(uint32 binding, vk::DescriptorImageInfo const& info);
+	void addTexture(uint32 binding, vkh::Texture const& text);
 	
 	void updateTextureDescriptorSet();
 	

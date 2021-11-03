@@ -53,10 +53,11 @@
     <ClCompile Include="source\vulkanContextLegacy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="source\camera.hpp" />
     <ClInclude Include="source\engine.hpp" />
     <ClInclude Include="source\GUILayer.hpp" />
     <ClInclude Include="source\imguiCustomWidgets.hpp" />
-    <ClInclude Include="source\SceneLight.hpp" />
+    <ClInclude Include="source\light.hpp" />
     <ClInclude Include="source\mesh.hpp" />
     <ClInclude Include="source\material.hpp" />
     <ClInclude Include="source\pipelineBatch.hpp" />
@@ -149,7 +150,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_DEPTH_ZERO_TO_ONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)source/;$(SolutionDir)source/thirdParty;%VK_SDK_PATH%/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -169,7 +170,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_DEPTH_ZERO_TO_ONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)source/;$(SolutionDir)source/thirdParty;%VK_SDK_PATH%/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -188,7 +189,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_DEPTH_ZERO_TO_ONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)source/;$(SolutionDir)source/thirdParty;%VK_SDK_PATH%/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -208,7 +209,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);GLM_DEPTH_ZERO_TO_ONE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)source/;$(SolutionDir)source/thirdParty;%VK_SDK_PATH%/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
