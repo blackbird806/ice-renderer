@@ -13,6 +13,7 @@
 #include "pipelineBatch.hpp"
 #include "scenegraph.hpp"
 #include "utility.hpp"
+#include "skybox.hpp"
 
 #undef min
 #undef max
@@ -77,7 +78,6 @@ static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
 	vkh::ShaderModule fragmentShader;
 	fragmentShader.create(context.deviceContext, toSpan<uint8>(fragSpv));
 	auto const vertSpv = readBinFile("shaders/vert.spv");
-
 	vkh::ShaderModule vertexShader;
 	vertexShader.create(context.deviceContext, toSpan<uint8>(vertSpv));
 
@@ -120,13 +120,16 @@ int main()
 	gui.init(context);
 	
 	auto [defaultPipeline, defaultRenderPass] = buildDefaultPipelineAndRenderPass(context);
-
 	auto presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 
+	Skybox skybox;
+	//skybox.create(context, *defaultRenderPass, "assets/kloppenheim_02_4k.hdr");
+	
 	context.onSwapchainRecreate = [&] ()
 	{
 		auto pair = buildDefaultPipelineAndRenderPass(context);
 		defaultPipeline = std::move(pair.pipeline);
+
 		defaultRenderPass = std::move(pair.renderPass);
 		presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 		gui.handleSwapchainRecreation(context);
@@ -142,7 +145,7 @@ int main()
 	vkh::Texture snowRoughness = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Roughness.jpg");
 
 	PipelineBatch defaultPipelineBatch;
-	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool, 32);
+	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool);
 
 	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
@@ -324,7 +327,7 @@ int main()
 		renderPassInfo.pClearValues = clearsValues;
 		
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-		
+
 			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipeline);
 
 			vk::DescriptorSet sets0[] = { lightSet , defaultPipelineBatch.pipelineConstantsSet };
@@ -348,7 +351,8 @@ int main()
 				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::DrawCall, std::size(sets3), sets3, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
-		
+
+			//skybox.draw(cmdBuffer);
 		cmdBuffer.endRenderPass();
 		
 		gui.render(cmdBuffer, context.currentFrame, context.swapchain.extent);

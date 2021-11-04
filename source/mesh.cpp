@@ -64,7 +64,7 @@ LoadedObj loadObj(std::filesystem::path const& objPath)
 					tinyobj::real_t const ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
 
 					vertex.uv.x = tx;
-					vertex.uv.y = ty;
+					vertex.uv.y = 1 - ty;
 				}
 
 				// Optional: vertex colors

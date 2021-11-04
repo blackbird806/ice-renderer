@@ -93,6 +93,15 @@ struct ImguiMaterialVisitor
 		}
 	}
 
+	void operator()(glm::vec2 f)
+	{
+		if (ImGui::DragFloat2(param.name.c_str(), (float*)&f, 0.001))
+		{
+			param.value<glm::vec2>() = f;
+		}
+	}
+
+	
 	void operator()(auto f)
 	{
 		ImGui::Text(param.name.c_str());

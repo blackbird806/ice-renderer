@@ -244,7 +244,8 @@ void VulkanContext::endFrame()
 	submitInfo.waitSemaphoreCount = std::size(waitSemaphores);
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
-	
+
+	// @TODO handle multiples cmdbuffers (skybox, ...)
 	submitInfo.commandBufferCount = 1;
 
 	submitInfo.pCommandBuffers = &commandBuffers.commandBuffers[imageIndex].get();

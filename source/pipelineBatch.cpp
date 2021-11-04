@@ -4,12 +4,9 @@
 
 std::unordered_map<std::string, vkh::ShaderVariable> PipelineBatch::defaultPipelineConstants;
 
-void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_)
+void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool)
 {
-	assert(batchSize > 0);
-	
 	pipeline = &pipeline_;
-	batchSize = batchSize_;
 	auto& deviceContext = *pipeline_.deviceContext;
 
 	{

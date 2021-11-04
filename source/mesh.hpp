@@ -51,7 +51,7 @@ namespace std {
 
 LoadedObj loadObj(std::filesystem::path const& objPath);
 
-class Mesh : RenderObject
+class Mesh
 {
 public:
 	Mesh(vkh::DeviceContext& ctx, LoadedObj const& mesh, uint32 maxFramesInFlight);

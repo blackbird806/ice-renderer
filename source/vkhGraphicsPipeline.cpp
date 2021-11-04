@@ -4,7 +4,6 @@
 #include "vkhDeviceContext.hpp"
 #include "vkhUtility.hpp"
 
-
 vk::UniqueRenderPass vkh::createDefaultRenderPassMSAA(vkh::DeviceContext& deviceContext,
 	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
 {

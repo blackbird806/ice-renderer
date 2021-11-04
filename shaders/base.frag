@@ -37,6 +37,8 @@ layout(set = 3, binding = 0) uniform Material {
     vec3 specular;
     float padding_6;
     bool show_uv;
+    float padding_60, padding_61, padding_62;
+    vec2 t;
 };
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -45,8 +47,9 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
+    vec2 uv = fragTexCoord;
     if (show_uv)
-        outColor = vec4(fragTexCoord, 0.0, 1.0);
+        outColor = vec4(uv, 0.5, 1.0);
     else
-        outColor = texture(albedoSamplers[albedoId], fragTexCoord ) * vec4(lights[0].intensity, 1.0);
+        outColor = texture(albedoSamplers[albedoId], uv) * vec4(lights[0].intensity, 1.0);
 }

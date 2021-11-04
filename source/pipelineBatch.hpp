@@ -14,7 +14,7 @@ struct PipelineBatch
 {
 	static std::unordered_map<std::string, vkh::ShaderVariable> defaultPipelineConstants;
 
-	void create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool, uint32 batchSize_);
+	void create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool pool);
 
 	void updatePipelineConstantsSet() const;
 	void updatePipelineConstantBuffer();
@@ -25,8 +25,6 @@ struct PipelineBatch
 	
 	vk::DeviceSize getPipelineConstantsBufferEntrySize() const;
 
-	uint32 batchSize;
-	
 	vkh::GraphicsPipeline* pipeline;
 
 	vkh::Buffer pipelineConstantBuffer;

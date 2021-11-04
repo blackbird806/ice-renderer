@@ -27,6 +27,7 @@
     <ClCompile Include="source\mesh.cpp" />
     <ClCompile Include="source\pipelineBatch.cpp" />
     <ClCompile Include="source\scenegraph.cpp" />
+    <ClCompile Include="source\skybox.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="source\thirdParty\imgui\imgui_draw.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="source\pipelineBatch.hpp" />
     <ClInclude Include="source\renderObject.hpp" />
     <ClInclude Include="source\scenegraph.hpp" />
+    <ClInclude Include="source\skybox.hpp" />
     <ClInclude Include="source\vkhCommandBuffers.hpp" />
     <ClInclude Include="source\vkhDescriptorSetLayout.hpp" />
     <ClInclude Include="source\vkhDeviceContext.hpp" />
