@@ -9,7 +9,7 @@ namespace vkh
 {
 	struct DeviceContext;
 
-	enum DescriptorSetIndex : size_t
+	enum DescriptorSetIndex : uint32
 	{
 		Default = 0,
 		Lights = 0,

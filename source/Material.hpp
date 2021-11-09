@@ -29,6 +29,16 @@ struct Material
 	
 	void updateDescriptorSets();
 
+	template<typename T>
+	void set(std::string const& name, T val)
+	{
+		auto* param = getParameter(name);
+		if (!param)
+			return;
+
+		param->build<T>(val);
+	}
+	
 	vkh::ShaderVariable* getParameter(std::string const& name);
 	
 	vkh::GraphicsPipeline* graphicsPipeline; // To remove ?

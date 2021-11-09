@@ -19,7 +19,7 @@ struct PipelineBatch
 	void updatePipelineConstantsSet() const;
 	void updatePipelineConstantBuffer();
 
-	void addTexture(uint32 binding, vkh::Texture const& text);
+	int32 addTexture(uint32 binding, vkh::Texture const& text);
 	
 	void updateTextureDescriptorSet();
 	

@@ -65,19 +65,9 @@ void Skybox::create(VulkanContext& context, vk::RenderPass renderPass, const cha
 	};
 
 	pipeline.create(context.deviceContext, pipelineInfo);
-
-	// @Review rework pipelineBatch should be reworked or is overkill here
-	pipelineBatch.create(pipeline, *context.descriptorPool);
-	// ugly hack here
-	pipelineBatch.pipelineConstantsSet = pipeline.createDescriptorSets(*context.descriptorPool, vkh::Default, 1)[0];
-	pipelineBatch.texturesSet = pipeline.createDescriptorSets(*context.descriptorPool, vkh::Default, 1)[0];
 	
 	skyboxTexture = loadSkyboxTexture(context.deviceContext, texturePath);
-
-
 	
-	pipelineBatch.updatePipelineConstantBuffer();
-
 	{
 		vk::BufferCreateInfo bufferInfo;
 		bufferInfo.size = sizeof(unitCubeVertices);
@@ -100,6 +90,45 @@ void Skybox::create(VulkanContext& context, vk::RenderPass renderPass, const cha
 
 		unitCubeIndexBuffer.createWithStaging(context.deviceContext, bufferInfo, allocInfo, std::span((uint8*)unitCubeIndices, sizeof(unitCubeIndices)));
 	}
+	{
+		vk::BufferCreateInfo bufferInfo;
+		bufferInfo.size = sizeof(unitCubeIndices);
+		bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
+		bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+		vma::AllocationCreateInfo allocInfo;
+		allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
+
+		uniformBuffer.create(context.deviceContext, bufferInfo, allocInfo);
+	}
+	descriptorSet = pipeline.createDescriptorSets(*context.descriptorPool, vkh::Default, 1)[0];
+
+	vk::DescriptorBufferInfo uniformBufferInfo{};
+	uniformBufferInfo.buffer = uniformBuffer.buffer;
+	uniformBufferInfo.offset = 0;
+	uniformBufferInfo.range = VK_WHOLE_SIZE;
+
+	vk::WriteDescriptorSet uniformWrites[2];
+	uniformWrites[0].dstSet = descriptorSet;
+	uniformWrites[0].dstBinding = 0;
+	uniformWrites[0].dstArrayElement = 0;
+	uniformWrites[0].descriptorType = vk::DescriptorType::eUniformBuffer;
+	uniformWrites[0].descriptorCount = 1;
+	uniformWrites[0].pBufferInfo = &uniformBufferInfo;
+
+	vk::DescriptorImageInfo textureInfo;
+	textureInfo.sampler = *skyboxTexture.sampler;
+	textureInfo.imageView = *skyboxTexture.imageView;
+	textureInfo.imageLayout = skyboxTexture.image.getLayout();
+	
+	uniformWrites[1].dstSet = descriptorSet;
+	uniformWrites[1].dstBinding = 1;
+	uniformWrites[1].dstArrayElement = 0;
+	uniformWrites[1].descriptorType = vk::DescriptorType::eCombinedImageSampler;
+	uniformWrites[1].descriptorCount = 1;
+	uniformWrites[1].pImageInfo = &textureInfo;
+	
+	context.deviceContext.device.updateDescriptorSets(std::size(uniformWrites), uniformWrites, 0, nullptr);
 }
 
 void Skybox::draw(vk::CommandBuffer cmd)
@@ -108,9 +137,9 @@ void Skybox::draw(vk::CommandBuffer cmd)
 	// this will need command buffer and vk context refactor
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *pipeline.pipeline);
 	
-	vk::DescriptorSet sets[] = { pipelineBatch.pipelineConstantsSet , pipelineBatch.texturesSet };
-	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline.pipelineLayout, vkh::Default, std::size(sets), sets, 0, nullptr);
-	cmd.bindVertexBuffers(0, { unitCubeVertexBuffer.buffer }, nullptr);
+	vk::DescriptorSet sets[] = { descriptorSet };
+	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *pipeline.pipelineLayout, 0, std::size(sets), sets, 0, nullptr);
+	cmd.bindVertexBuffers(0, { unitCubeVertexBuffer.buffer }, {0});
 	cmd.bindIndexBuffer(unitCubeIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
 	cmd.drawIndexed(cubeIndexCount, 1, 0, 0, 0);

@@ -68,7 +68,7 @@ void PipelineBatch::updatePipelineConstantBuffer()
 	}
 }
 
-void PipelineBatch::addTexture(uint32 binding, vkh::Texture const& text)
+int32 PipelineBatch::addTexture(uint32 binding, vkh::Texture const& text)
 {
 	assert(binding < imageInfosArray.size());
 
@@ -78,6 +78,8 @@ void PipelineBatch::addTexture(uint32 binding, vkh::Texture const& text)
 	info.imageLayout = text.image.getLayout();
 	
 	imageInfosArray[binding].push_back(info);
+	
+	return imageInfosArray[binding].size() - 1;
 }
 
 void PipelineBatch::updateTextureDescriptorSet()

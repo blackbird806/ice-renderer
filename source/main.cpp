@@ -123,7 +123,7 @@ int main()
 	auto presentFrameBuffers = context.createPresentFramebuffers(*defaultRenderPass);
 
 	Skybox skybox;
-	//skybox.create(context, *defaultRenderPass, "assets/kloppenheim_02_4k.hdr");
+	skybox.create(context, *defaultRenderPass, "assets/kloppenheim_02_4k.hdr");
 	
 	context.onSwapchainRecreate = [&] ()
 	{
@@ -150,6 +150,8 @@ int main()
 	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 
+	// create one per drawCall descriptor set per computed frame
+	// descriptorsets point to the same buffer with an adjusted offset
 	for (int i = 0; i < context.maxFramesInFlight; i++)
 	{
 		vk::DescriptorBufferInfo bufferInfo{};
@@ -180,19 +182,24 @@ int main()
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
 
-	defaultPipelineBatch.addTexture(0, text);
-	defaultPipelineBatch.addTexture(0, snowAlbedo);
-	defaultPipelineBatch.addTexture(1, snowNormal);
-	defaultPipelineBatch.addTexture(2, snowRoughness);
+	Material defaultMaterial;
+	defaultMaterial.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
+	defaultMaterial.set("albedoId", defaultPipelineBatch.addTexture(0, text));
+	defaultMaterial.updateBuffer();
+	defaultMaterial.updateDescriptorSets();
+	scene.materials.push_back(std::move(defaultMaterial));
+
+	Material iceMaterial;
+	iceMaterial.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
+	iceMaterial.set("albedoId", defaultPipelineBatch.addTexture(0, snowAlbedo));
+	iceMaterial.set("normalId", defaultPipelineBatch.addTexture(1, snowNormal));
+	iceMaterial.set("roughnessId", defaultPipelineBatch.addTexture(2, snowRoughness));
+	iceMaterial.updateBuffer();
+	iceMaterial.updateDescriptorSets();
+	scene.materials.push_back(std::move(iceMaterial));
 	
 	defaultPipelineBatch.updateTextureDescriptorSet();
 	
-	Material mtrl;
-	mtrl.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
-	mtrl.updateBuffer();
-	mtrl.updateDescriptorSets();
-	scene.materials.push_back(std::move(mtrl));
-
 	for (auto const& objMaterial : obj.materials)
 	{
 		Material mtrlObj;
@@ -223,13 +230,13 @@ int main()
 	
 	scene.addObject(root.nodeId)
 		.setName("cube")
-		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, 1.0f)))
+		.setLocalTransform(Transform{ glm::vec3(-5, 0, 10), glm::vec3(1.0), glm::quat(), glm::vec3(0, 60, 0) })
 		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 0 });
 	
 	scene.addObject(root.nodeId)
 		.setName("boat")
-		.setLocalMatrix(glm::scale(glm::mat4(1.0f), glm::vec3(0.2f, 0.2f, 0.2f)))
-		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
+		.setLocalTransform(Transform{ glm::vec3(0.0, -50, 350), glm::vec3(0.2f, 0.2f, 0.2f), glm::quat(), glm::vec3(0.0f, 100.0f, 0.0f) })
+		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 1, .meshID = 1 });
 
 	vkh::Buffer lightsBuffer;
 	{
@@ -316,6 +323,9 @@ int main()
 		PipelineBatch::defaultPipelineConstants["proj"].build(proj);
 		PipelineBatch::defaultPipelineConstants["time"].build(time);
 
+		skybox.uniformBuffer.writeData({ (uint8*)&view, sizeof(view) }, 0);
+		skybox.uniformBuffer.writeData({ (uint8*)&proj, sizeof(proj) }, sizeof(view));
+		
 		defaultPipelineBatch.updatePipelineConstantBuffer();
 		
 		vk::RenderPassBeginInfo renderPassInfo{};
@@ -352,7 +362,6 @@ int main()
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
 
-			//skybox.draw(cmdBuffer);
 		cmdBuffer.endRenderPass();
 		
 		gui.render(cmdBuffer, context.currentFrame, context.swapchain.extent);

@@ -12,6 +12,7 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 	std::vector<ShaderReflector::DescriptorSetLayoutData> dsLayoutData;
 
 	// correctly merge shaders descriptor sets
+	// TODO handle different declaration of same set
 	for (auto const& shaderInfo : shadersInfos)
 	{
 		for (auto& e : shaderInfo->getDescriptorSetLayoutData())
@@ -31,6 +32,7 @@ void ShaderDescriptorLayout::create(vkh::DeviceContext& ctx, std::span<ShaderRef
 		});
 	
 	// set correct shader stages to bindings
+	// @Review this seems to set more flags than needed
 	for (auto& dsLayout : dsLayoutData)
 	{
 		for(auto& binding : dsLayout.bindings)
