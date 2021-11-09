@@ -92,7 +92,7 @@ void Skybox::create(VulkanContext& context, vk::RenderPass renderPass, const cha
 	}
 	{
 		vk::BufferCreateInfo bufferInfo;
-		bufferInfo.size = sizeof(unitCubeIndices);
+		bufferInfo.size = sizeof(glm::mat4) * 2;
 		bufferInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
 		bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
@@ -142,5 +142,5 @@ void Skybox::draw(vk::CommandBuffer cmd)
 	cmd.bindVertexBuffers(0, { unitCubeVertexBuffer.buffer }, {0});
 	cmd.bindIndexBuffer(unitCubeIndexBuffer.buffer, 0, vk::IndexType::eUint32);
 
-	cmd.drawIndexed(cubeIndexCount, 1, 0, 0, 0);
+	cmd.drawIndexed(std::size(unitCubeIndices), 1, 0, 0, 0);
 }

@@ -18,5 +18,4 @@ public:
 	vkh::Buffer unitCubeVertexBuffer;
 	vkh::Buffer unitCubeIndexBuffer;
 	vkh::Texture skyboxTexture;
-	static constexpr uint32 cubeIndexCount = 8;
 };

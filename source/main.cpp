@@ -323,8 +323,8 @@ int main()
 		PipelineBatch::defaultPipelineConstants["proj"].build(proj);
 		PipelineBatch::defaultPipelineConstants["time"].build(time);
 
-		skybox.uniformBuffer.writeData({ (uint8*)&view, sizeof(view) }, 0);
-		skybox.uniformBuffer.writeData({ (uint8*)&proj, sizeof(proj) }, sizeof(view));
+		skybox.uniformBuffer.writeStruct(view);
+		skybox.uniformBuffer.writeStruct(proj, sizeof(view));
 		
 		defaultPipelineBatch.updatePipelineConstantBuffer();
 		
@@ -361,7 +361,7 @@ int main()
 				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::DrawCall, std::size(sets3), sets3, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
-
+			skybox.draw(cmdBuffer);
 		cmdBuffer.endRenderPass();
 		
 		gui.render(cmdBuffer, context.currentFrame, context.swapchain.extent);
