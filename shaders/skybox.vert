@@ -12,6 +12,6 @@ layout(location = 0) out vec3 localPos;
 
 void main()
 {
-    localPos = inPosition;
+    localPos = vec3(inPosition.x * 10000.0, inPosition.y * 10000.0, inPosition.z * 10000.0);
     gl_Position =  proj * view * vec4(localPos, 1.0);
 }

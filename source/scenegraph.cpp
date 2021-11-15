@@ -162,6 +162,7 @@ Scene::Object Scene::getObject(HierarchyID id)
 	return Object{ id, *this };
 }
 
+// @Bug may be broken
 void Scene::markDirty(HierarchyID node)
 {
 	dirtyNodes.resize(maxLevel + 1);
@@ -174,6 +175,7 @@ void Scene::markDirty(HierarchyID node)
 	}
 }
 
+// @Bug may be broken
 void Scene::computeWorldsTransforms()
 {
 	for (auto& level : dirtyNodes)
@@ -232,7 +234,7 @@ void Scene::imguiDrawSceneTreeLevel(Iterator it)
 	
 }
 
-void Scene::imguiDrawInspector()
+void Scene::imguiDrawProperties()
 {
 	if (focusedId == invalidNodeID)
 		return;

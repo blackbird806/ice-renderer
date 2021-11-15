@@ -84,7 +84,7 @@ struct Scene
 
 	void imguiDrawSceneTree();
 	void imguiDrawSceneTreeLevel(Iterator first);
-	void imguiDrawInspector();
+	void imguiDrawProperties();
 
 	LightBuffer getLightBuffer() const;
 

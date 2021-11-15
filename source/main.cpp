@@ -104,6 +104,44 @@ static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
 	return ret;
 }
 
+void updateCameraMovement(GLFWwindow* window, float dt, float speed, Scene::Object& camNode)
+{
+	auto transform = camNode.getTransform();
+	
+	// Rotation
+	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		int width, height;
+		glfwGetWindowSize(window, &width, &height);
+		float const yaw = speed * dt * float(width / 2 - xpos) * 0.1f;
+		float const pitch = speed * dt * float(height / 2 - ypos) * 0.1f;
+		glfwSetCursorPos(window, width / 2, height / 2);
+
+		glm::clamp(transform.eulerRot.x, -89.9f, 89.9f);
+
+		transform.eulerRot = glm::vec3(glm::cos(pitch) * glm::cos(yaw), glm::cos(pitch) * glm::sin(yaw), glm::sin(pitch));
+	}
+	else
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+	glm::vec3 const left = glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), transform.eulerRot);
+	glm::vec3 const up = glm::cross(transform.eulerRot, left);
+	
+	// Translation
+	if (glfwGetKey(window, GLFW_KEY_A))	transform.pos += transform.eulerRot * speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_D))	transform.pos -= left * speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_W))	transform.pos += transform.eulerRot * speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_S))	transform.pos -= transform.eulerRot * speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_Q))	transform.pos -= up * speed * dt;
+	if (glfwGetKey(window, GLFW_KEY_E))	transform.pos += up * speed * dt;
+
+	camNode.setLocalTransform(transform);
+}
+
 int main()
 {
 	glfwInit();
@@ -297,7 +335,7 @@ int main()
 		ImGui::End();
 
 		ImGui::Begin("Properties");
-		scene.imguiDrawInspector();
+		scene.imguiDrawProperties();
 		ImGui::End();
 		
 		scene.computeWorldsTransforms();
@@ -313,6 +351,7 @@ int main()
 			ImGui::Separator();
 		}
 
+		updateCameraMovement(window, deltaTime, 5.0f, cameraNode);
 		glm::mat4 view;
 		glm::mat4 proj;
 		view = glm::lookAt(cameraNode.getWorldPosition(), cameraNode.getWorldPosition() + glm::vec3(0, 0, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));

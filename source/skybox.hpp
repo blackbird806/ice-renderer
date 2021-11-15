@@ -11,9 +11,10 @@ public:
 	void create(VulkanContext& ctx, vk::RenderPass renderPass, const char* texturePath);
 	void draw(vk::CommandBuffer cmd);
 
-//private:
-	vkh::GraphicsPipeline pipeline;
 	vkh::Buffer uniformBuffer;
+private:
+	vkh::GraphicsPipeline pipeline;
+	vk::RenderPass renderPass;
 	vk::DescriptorSet descriptorSet;
 	vkh::Buffer unitCubeVertexBuffer;
 	vkh::Buffer unitCubeIndexBuffer;

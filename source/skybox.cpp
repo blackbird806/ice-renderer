@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
+#include "vkhUtility.hpp"
+
 static glm::vec3 unitCubeVertices[] = {
 	{-0.5f, -0.5f, 0.5f},
 	{0.5f, -0.5f, 0.5f},
@@ -43,6 +45,84 @@ static vkh::Texture loadSkyboxTexture(vkh::DeviceContext& ctx, std::string const
 
 	stbi_image_free(pixels);
 	return text;
+}
+
+static vk::UniqueRenderPass createSkyboxRenderPass(vkh::DeviceContext& deviceContext,
+	vk::Format colorFormat, vk::SampleCountFlagBits msaaSamples)
+{
+	vk::AttachmentDescription colorAttachment = {};
+	colorAttachment.format = colorFormat;
+	colorAttachment.samples = msaaSamples;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	colorAttachment.stencilLoadOp = vk::AttachmentLoadOp::eLoad;
+	colorAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	colorAttachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::AttachmentDescription colorAttachmentResolve{};
+	colorAttachmentResolve.format = colorFormat;
+	colorAttachmentResolve.samples = vk::SampleCountFlagBits::e1;
+	colorAttachmentResolve.loadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachmentResolve.storeOp = vk::AttachmentStoreOp::eStore;
+	colorAttachmentResolve.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	colorAttachmentResolve.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	colorAttachmentResolve.initialLayout = vk::ImageLayout::eUndefined;
+	colorAttachmentResolve.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+	vk::AttachmentDescription depthAttachment = {};
+	depthAttachment.format = vkh::findDepthFormat(deviceContext.physicalDevice);
+	depthAttachment.samples = msaaSamples;
+	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	depthAttachment.storeOp = vk::AttachmentStoreOp::eDontCare;
+	depthAttachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+	depthAttachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+	depthAttachment.initialLayout = vk::ImageLayout::eUndefined;
+	depthAttachment.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+	vk::AttachmentReference colorAttachmentRef = {};
+	colorAttachmentRef.attachment = 0;
+	colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::AttachmentReference depthAttachmentRef = {};
+	depthAttachmentRef.attachment = 1;
+	depthAttachmentRef.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+	vk::AttachmentReference colorAttachmentResolveRef{};
+	colorAttachmentResolveRef.attachment = 2;
+	colorAttachmentResolveRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+	vk::SubpassDescription subpass = {};
+	subpass.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colorAttachmentRef;
+	subpass.pResolveAttachments = &colorAttachmentResolveRef;
+	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+	vk::SubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+	dependency.srcAccessMask = vk::AccessFlagBits();
+	dependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+	dependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+
+	vk::AttachmentDescription attachments[] =
+	{
+		colorAttachment,
+		depthAttachment,
+		colorAttachmentResolve,
+	};
+
+	vk::RenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.attachmentCount = static_cast<uint32>(std::size(attachments));
+	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
+
+	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
 }
 
 void Skybox::create(VulkanContext& context, vk::RenderPass renderPass, const char* texturePath)
