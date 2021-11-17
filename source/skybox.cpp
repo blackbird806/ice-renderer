@@ -136,13 +136,12 @@ void Skybox::create(VulkanContext& context, vk::RenderPass renderPass, const cha
 
 	int width, height;
 	glfwGetWindowSize(context.window, &width, &height);
-	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
-		.vertexShader = std::move(vertexShader),
-		.fragmentShader = std::move(fragmentShader),
-		.renderPass = renderPass,
-		.imageExtent = { (uint32)width, (uint32)height},
-		.msaaSamples = context.msaaSamples
-	};
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo(
+		std::move(vertexShader),
+		std::move(fragmentShader),
+		renderPass,
+		{ (uint32)width, (uint32)height}
+	);
 
 	pipeline.create(context.deviceContext, pipelineInfo);
 	

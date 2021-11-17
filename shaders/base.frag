@@ -1,45 +1,16 @@
 #version 450
 
-struct Light {
-    vec3 pos;
-    float padding_00;
-    vec3 dir;
-    float padding_01;
-    vec3 intensity;
-};
-
-layout(set = 0, binding = 0) uniform Lights {
-    Light lights[16];
-    uint nlights;
-};
-
-layout(set = 1, binding = 0) uniform PipelineConstants {
+layout(set = 0, binding = 0) uniform Parameters {
     mat4 view;
     mat4 proj;
-    float time;
-};
 
-layout(set = 2, binding = 0) uniform sampler2D albedoSamplers[64];
-layout(set = 2, binding = 1) uniform sampler2D normalSamplers[64];
-layout(set = 2, binding = 2) uniform sampler2D roughnessSamplers[64];
-
-layout(set = 3, binding = 0) uniform Material {
     vec3 color;
-    float padding_0;
-    int albedoId;
-    int normalId;
-    int roughnessId;
-    float padding_1;
-    vec3 ambient;
-    float padding_4;
-    vec3 diffuse;
-    float padding_5;
-    vec3 specular;
-    float padding_6;
     bool show_uv;
-    float padding_60, padding_61, padding_62;
     vec2 t;
 };
+layout(set = 0, binding = 1) uniform sampler2D albedo;
+layout(set = 0, binding = 2) uniform sampler2D normal;
+layout(set = 0, binding = 3) uniform sampler2D roughness;
 
 layout(location = 0) in vec2 fragTexCoord;
 
@@ -51,5 +22,5 @@ void main()
     if (show_uv)
         outColor = vec4(uv, 0.5, 1.0);
     else
-        outColor = texture(albedoSamplers[albedoId], uv) * vec4(lights[0].intensity, 1.0);
+        outColor = texture(albedo, uv) * vec4(color, 1.0);
 }

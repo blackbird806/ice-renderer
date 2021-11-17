@@ -14,7 +14,7 @@ namespace vkh
 {
 	struct DeviceContext;
 
-	static size_t constexpr uniformBufferAllignement = 16;
+	static size_t constexpr uniformBufferVariableAllignement = 16;
 
 	struct ShaderStruct
 	{
@@ -40,6 +40,8 @@ namespace vkh
 		Sampler1D, Sampler2D, Sampler3D,
 		ShaderStruct
 	};
+
+	bool isSampler(ShaderVarType type);
 	
 #define FROM_TYPE_SPECIALISATION_DECL(type) ShaderVarType fromType(type);
 	
@@ -162,10 +164,10 @@ namespace vkh
 		{
 			type = fromType(v);
 			arrayElements.resize<T>(1);
-			value<T>() = v;
+			memcpy((void*)arrayElements.data(), &v, getAlignedSize());
 		}
 		
-		size_t getSize() const;
+		size_t getAlignedSize() const;
 
 		std::string name;
 		SpvReflectTypeFlags typeFlags = 0;
@@ -174,10 +176,13 @@ namespace vkh
 
 		ShaderVarType type;
 
-		// @TODO structType / arrayElements should be a variant
+		// @improve structType / arrayElements should be in the vector variant
+		// however since structType isn't trivially copyable we can't do this cleanly without writting a clean version of vector variant
+		// wich is out of scope for this project
+
 		std::optional<ShaderStruct> structType;
 		// @improve: better version of vector variant (out of scope for now)
-		VectorAny arrayElements;
+		VectorAny<uniformBufferVariableAllignement> arrayElements;
 	};
 
 	

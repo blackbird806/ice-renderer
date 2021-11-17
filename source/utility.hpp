@@ -3,8 +3,20 @@
 #include <utility>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 #include <filesystem>
 #include <span>
+
+constexpr bool isPowerOf2(size_t n)
+{
+	return (n > 0 && ((n & (n - 1)) == 0));
+}
+
+constexpr size_t align(size_t x, size_t a)
+{
+	assert(isPowerOf2(a));
+	return (x + (a - 1)) & ~(a - 1);
+}
 
 std::vector<char> readBinFile(std::filesystem::path const& filePath);
 
@@ -30,7 +42,7 @@ void insertUnique(C& cont, E&& e)
 		cont.insert(cont.end(), std::forward<E>(e));
 }
 
-
+template<size_t alignement = 1>
 class VectorAny
 {
 public:
@@ -39,20 +51,20 @@ public:
 	void push_back(T&& e = T{})
 	{
 		auto const i = arr.size();
-		arr.resize(arr.size() + sizeof(e));
+		arr.resize(arr.size() + alignedElementSize<T>());
 		new (&arr[i]) T(std::forward<T>(e));
 	}
 
 	template<typename T>
 	T& get(size_t i)
 	{
-		return reinterpret_cast<T*>(arr.data())[i];
+		return *reinterpret_cast<T*>(arr.data() + alignedElementSize<T>());
 	}
 
 	template<typename T>
 	T const& get(size_t i) const
 	{
-		return reinterpret_cast<T const*>(arr.data())[i];
+		return *reinterpret_cast<T const*>(arr.data() + alignedElementSize<T>());
 	}
 
 	void resizeRaw(size_t n)
@@ -63,7 +75,7 @@ public:
 	template<typename T>
 	void resize(size_t n)
 	{
-		arr.resize(sizeof(T) * n);
+		arr.resize(alignedElementSize<T>() * n);
 	}
 	
 	size_t sizeRaw() const noexcept
@@ -74,7 +86,7 @@ public:
 	template<typename T>
 	size_t size() const noexcept
 	{
-		return arr.size() / sizeof(T);
+		return arr.size() / alignedElementSize<T>();
 	}
 	
 	std::byte const* data() const noexcept
@@ -83,5 +95,12 @@ public:
 	}
 	
 private:
+	
+	template<typename T>
+	constexpr static size_t alignedElementSize() noexcept
+	{
+		return align(sizeof(T), alignement);
+	}
+	
 	std::vector<std::byte> arr;
 };

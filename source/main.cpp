@@ -50,23 +50,6 @@ static vkh::Texture loadTexture(vkh::DeviceContext& ctx, std::string const& path
 	return text;
 }
 
-static auto buildPipeline(VulkanContext& context, vk::RenderPass renderPass, vkh::ShaderModule& vertexShader, vkh::ShaderModule& fragmentShader)
-{
-	int width, height;
-	glfwGetWindowSize(context.window, &width, &height);
-	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
-		.vertexShader = std::move(vertexShader),
-		.fragmentShader = std::move(fragmentShader),
-		.renderPass = renderPass,
-		.imageExtent = { (uint32)width, (uint32)height},
-		.msaaSamples = context.msaaSamples
-	};
-
-	vkh::GraphicsPipeline pipeline;
-	pipeline.create(context.deviceContext, pipelineInfo);
-	return pipeline;
-}
-
 static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
 {
 	vk::Format const colorFormat = context.swapchain.format;
@@ -83,14 +66,9 @@ static auto buildDefaultPipelineAndRenderPass(VulkanContext& context)
 
 	int width, height;
 	glfwGetWindowSize(context.window, &width, &height);
-	vkh::GraphicsPipeline::CreateInfo pipelineInfo = {
-		.vertexShader = std::move(vertexShader),
-		.fragmentShader = std::move(fragmentShader),
-		.renderPass = *defaultRenderPass,
-		.imageExtent = { (uint32)width, (uint32)height},
-		.msaaSamples = context.msaaSamples
-	};
-
+	vkh::GraphicsPipeline::CreateInfo pipelineInfo(std::move(vertexShader), std::move(fragmentShader), 
+		*defaultRenderPass, { (uint32)width, (uint32)height });
+	
 	vkh::GraphicsPipeline defaultPipeline;
 	defaultPipeline.create(context.deviceContext, pipelineInfo);
 
@@ -182,12 +160,9 @@ int main()
 	vkh::Texture snowNormal = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Normal.jpg");
 	vkh::Texture snowRoughness = loadTexture(context.deviceContext, "assets/Nature_Snow/vdbmabvva_2K_Roughness.jpg");
 
-	PipelineBatch defaultPipelineBatch;
-	defaultPipelineBatch.create(defaultPipeline, *context.descriptorPool);
-
 	mesh.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
 	mesh2.modelSets = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::DrawCall, context.maxFramesInFlight);
-
+	
 	// create one per drawCall descriptor set per computed frame
 	// descriptorsets point to the same buffer with an adjusted offset
 	for (int i = 0; i < context.maxFramesInFlight; i++)
@@ -220,33 +195,31 @@ int main()
 		context.deviceContext.device.updateDescriptorSets(std::size(descriptorWrites), descriptorWrites, 0, nullptr);
 	}
 
-	Material defaultMaterial;
-	defaultMaterial.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
-	defaultMaterial.set("albedoId", defaultPipelineBatch.addTexture(0, text));
-	defaultMaterial.updateBuffer();
-	defaultMaterial.updateDescriptorSets();
-	scene.materials.push_back(std::move(defaultMaterial));
+	//Material defaultMaterial;
+	//defaultMaterial.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
+	//defaultMaterial.setParameter("albedoId", defaultPipelineBatch.addTexture(0, text));
+	//defaultMaterial.updateBuffer();
+	//defaultMaterial.updateDescriptorSets();
+	//scene.materials.push_back(std::move(defaultMaterial));
 
 	Material iceMaterial;
-	iceMaterial.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
-	iceMaterial.set("albedoId", defaultPipelineBatch.addTexture(0, snowAlbedo));
-	iceMaterial.set("normalId", defaultPipelineBatch.addTexture(1, snowNormal));
-	iceMaterial.set("roughnessId", defaultPipelineBatch.addTexture(2, snowRoughness));
+	iceMaterial.create(context.deviceContext, std::move(defaultPipeline), *context.descriptorPool);
+	iceMaterial.setTextureParameter("albedo", snowAlbedo);
+	iceMaterial.setTextureParameter("normal", snowNormal);
+	iceMaterial.setTextureParameter("roughness", snowRoughness);
 	iceMaterial.updateBuffer();
 	iceMaterial.updateDescriptorSets();
 	scene.materials.push_back(std::move(iceMaterial));
 	
-	defaultPipelineBatch.updateTextureDescriptorSet();
-	
-	for (auto const& objMaterial : obj.materials)
-	{
-		Material mtrlObj;
-		mtrlObj.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
-		updateFromObjMaterial(objMaterial, mtrlObj);
-		mtrlObj.updateBuffer();
-		mtrlObj.updateDescriptorSets();
-		scene.materials.push_back(std::move(mtrlObj));
-	}
+	//for (auto const& objMaterial : obj.materials)
+	//{
+	//	Material mtrlObj;
+	//	mtrlObj.create(context.deviceContext, defaultPipeline, *context.descriptorPool);
+	//	updateFromObjMaterial(objMaterial, mtrlObj);
+	//	mtrlObj.updateBuffer();
+	//	mtrlObj.updateDescriptorSets();
+	//	scene.materials.push_back(std::move(mtrlObj));
+	//}
 	
 	vk::ClearValue clearsValues[2];
 	clearsValues[0].color = vk::ClearColorValue{ std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f} };
@@ -274,7 +247,7 @@ int main()
 	scene.addObject(root.nodeId)
 		.setName("boat")
 		.setLocalTransform(Transform{ glm::vec3(0.0, -50, 350), glm::vec3(0.2f, 0.2f, 0.2f), glm::quat(), glm::vec3(0.0f, 100.0f, 0.0f) })
-		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 1, .meshID = 1 });
+		.setRenderObject(RenderObject{ .pipelineID = 0, .materialID = 0, .meshID = 1 });
 
 	vkh::Buffer lightsBuffer;
 	{
@@ -288,22 +261,22 @@ int main()
 		lightsBuffer.create(context.deviceContext, bufferInfo, allocInfo);
 	}
 
-	vk::DescriptorSet lightSet = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::Lights, 1)[0];
+	//vk::DescriptorSet lightSet = defaultPipeline.createDescriptorSets(*context.descriptorPool, vkh::PipelineConstants, 1)[0];
 
-	vk::DescriptorBufferInfo lightBufferInfo{};
-	lightBufferInfo.buffer = lightsBuffer.buffer;
-	lightBufferInfo.offset = 0;
-	lightBufferInfo.range = VK_WHOLE_SIZE;
-	
-	vk::WriteDescriptorSet lightWrite;
-	lightWrite.dstSet = lightSet;
-	lightWrite.dstBinding = 0;
-	lightWrite.dstArrayElement = 0;
-	lightWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
-	lightWrite.descriptorCount = 1;
-	lightWrite.pBufferInfo = &lightBufferInfo;
+	//vk::DescriptorBufferInfo lightBufferInfo{};
+	//lightBufferInfo.buffer = lightsBuffer.buffer;
+	//lightBufferInfo.offset = 0;
+	//lightBufferInfo.range = VK_WHOLE_SIZE;
+	//
+	//vk::WriteDescriptorSet lightWrite;
+	//lightWrite.dstSet = lightSet;
+	//lightWrite.dstBinding = 0;
+	//lightWrite.dstArrayElement = 0;
+	//lightWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+	//lightWrite.descriptorCount = 1;
+	//lightWrite.pBufferInfo = &lightBufferInfo;
 
-	context.deviceContext.device.updateDescriptorSets(1, &lightWrite, 0, nullptr);
+	//context.deviceContext.device.updateDescriptorSets(1, &lightWrite, 0, nullptr);
 	
 	float time = 0;
 	float deltaTime = 0;
@@ -341,15 +314,6 @@ int main()
 		scene.computeWorldsTransforms();
 
 		lightsBuffer.writeStruct(scene.getLightBuffer());
-		
-		for (int i = 0; auto& m : scene.materials)
-		{
-			ImGui::PushID(i++);
-			m.imguiEditor();
-			m.updateBuffer();
-			ImGui::PopID();
-			ImGui::Separator();
-		}
 
 		updateCameraMovement(window, deltaTime, 5.0f, cameraNode);
 		glm::mat4 view;
@@ -357,15 +321,21 @@ int main()
 		view = glm::lookAt(cameraNode.getWorldPosition(), cameraNode.getWorldPosition() + glm::vec3(0, 0, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		proj = glm::perspective(glm::radians(60.0f), (float)context.swapchain.extent.width / context.swapchain.extent.height, 0.01f, 10000.0f);
 		proj[1][1] *= -1;
+		
+		for (int i = 0; auto& m : scene.materials)
+		{
+			ImGui::PushID(i++);
+			m.imguiEditor();
+			ImGui::PopID();
+			ImGui::Separator();
 
-		PipelineBatch::defaultPipelineConstants["view"].build(view);
-		PipelineBatch::defaultPipelineConstants["proj"].build(proj);
-		PipelineBatch::defaultPipelineConstants["time"].build(time);
+			m.setParameter("proj", proj);
+			m.setParameter("view", view);
+			m.updateBuffer();
+		}
 
 		skybox.uniformBuffer.writeStruct(view);
 		skybox.uniformBuffer.writeStruct(proj, sizeof(view));
-		
-		defaultPipelineBatch.updatePipelineConstantBuffer();
 		
 		vk::RenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.renderPass = *defaultRenderPass;
@@ -377,13 +347,6 @@ int main()
 		
 		cmdBuffer.beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-			cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipeline);
-
-			vk::DescriptorSet sets0[] = { lightSet , defaultPipelineBatch.pipelineConstantsSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Lights /*lights then pipeline consts*/, std::size(sets0), sets0, 0, nullptr);
-			vk::DescriptorSet sets1[] = { defaultPipelineBatch.texturesSet };
-			cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Textures, std::size(sets1), sets1, 0, nullptr);
-
 			uint32 lastMaterialID = -1;
 			for (auto const& [id, object] : scene.renderObjects)
 			{
@@ -391,13 +354,12 @@ int main()
 
 				if (object.materialID != lastMaterialID)
 				{
-					vk::DescriptorSet sets2[] = { scene.materials[object.materialID].descriptorSet };
-					cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::Materials, std::size(sets2), sets2, 0, nullptr);
+					scene.materials[object.materialID].bind(cmdBuffer);
 					lastMaterialID = object.materialID;
 				}
 				
-				vk::DescriptorSet sets3[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
-				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *defaultPipeline.pipelineLayout, vkh::DrawCall, std::size(sets3), sets3, 0, nullptr);
+				vk::DescriptorSet modelSet[] = { scene.meshes[object.meshID].modelSets[context.currentFrame] };
+				cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *scene.materials[object.materialID].graphicsPipeline.pipelineLayout, vkh::DrawCall, std::size(modelSet), modelSet, 0, nullptr);
 				scene.meshes[object.meshID].draw(cmdBuffer);
 			}
 			skybox.draw(cmdBuffer);

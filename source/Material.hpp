@@ -6,21 +6,16 @@
 #include "ice.hpp"
 #include "vkhBuffer.hpp"
 #include "vkhShader.hpp"
+#include "vkhGraphicsPipeline.hpp"
+#include "vkhTexture.hpp"
 
 namespace tinyobj {
 	struct material_t;
 }
 
-namespace vkh {
-	struct GraphicsPipeline;
-}
-
-//@Review material builder ?
 struct Material
 {
-	void create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline, vk::DescriptorPool);
-
-	size_t getUniformBufferSize() const noexcept;
+	void create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline&& pipeline, vk::DescriptorPool);
 
 	void imguiEditor();
 	
@@ -30,7 +25,7 @@ struct Material
 	void updateDescriptorSets();
 
 	template<typename T>
-	void set(std::string const& name, T val)
+	void setParameter(std::string const& name, T val)
 	{
 		auto* param = getParameter(name);
 		if (!param)
@@ -38,15 +33,45 @@ struct Material
 
 		param->build<T>(val);
 	}
+
+	//template<typename T>
+	//void setConstant(std::string const& name, T val)
+	//{
+	//	auto* param = getConstant(name);
+	//	if (!param)
+	//		return;
+
+	//	param->build<T>(val);
+	//}
+
+	void setTextureParameter(std::string const& name, vkh::Texture& texture);
+
+	void bind(vk::CommandBuffer cmd);
+	
+	struct TextureBindingElement
+	{
+		uint32 binding;
+		vkh::Texture* texture;
+	};
 	
 	vkh::ShaderVariable* getParameter(std::string const& name);
+	//vkh::ShaderVariable* getConstant(std::string const& name);
 	
-	vkh::GraphicsPipeline* graphicsPipeline; // To remove ?
+	vkh::GraphicsPipeline graphicsPipeline;
 
-	std::vector<vkh::ShaderVariable> parameters;
+private:
 	
-	vk::DescriptorSet descriptorSet;
-	vkh::Buffer uniformBuffer; // TODO set big material buffer in pipeline batch
+	[[nodiscard]] size_t getUniformBufferSize() const noexcept;
+	void computeParametersSize();
+	size_t pipelineConstantsSize = 0, parametersSize = 0;
+	
+	std::vector<vkh::ShaderVariable> parameters;
+	//std::vector<vkh::ShaderVariable> constants;
+	
+	vk::DescriptorSet parametersSet;
+	//vk::DescriptorSet constantsSet; // @Review use another buffer for constants ?
+	vkh::Buffer uniformBuffer; 
+	std::unordered_map<std::string, TextureBindingElement> paramsTextures;
 };
 
 void updateFromObjMaterial(tinyobj::material_t const& objMtrl, Material& mtrl);

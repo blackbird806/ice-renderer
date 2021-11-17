@@ -82,33 +82,27 @@ vk::UniqueRenderPass vkh::createDefaultRenderPassMSAA(vkh::DeviceContext& device
 	return deviceContext.device.createRenderPassUnique(renderPassInfo, deviceContext.allocationCallbacks);
 }
 
-void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& info)
+vkh::GraphicsPipeline::CreateInfo::CreateInfo(vkh::ShaderModule&& vertexShader_, vkh::ShaderModule&& fragmentShader_,
+	vk::RenderPass renderPass_, vk::Extent2D imageExtent) : vertexShader(std::move(vertexShader_)), fragmentShader(std::move(fragmentShader_)), renderPass(renderPass_)
 {
-	deviceContext = &ctx;
-	
-	vk::PipelineInputAssemblyStateCreateInfo inputAssembly = {};
 	inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-	vk::Viewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(info.imageExtent.width);
-	viewport.height = static_cast<float>(info.imageExtent.height);
+	viewport.width = static_cast<float>(imageExtent.width);
+	viewport.height = static_cast<float>(imageExtent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
-	vk::Rect2D scissor = {};
 	scissor.offset = vk::Offset2D{ 0, 0 };
-	scissor.extent = info.imageExtent;
+	scissor.extent = imageExtent;
 
-	vk::PipelineViewportStateCreateInfo viewportState = {};
 	viewportState.viewportCount = 1;
 	viewportState.pViewports = &viewport;
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = &scissor;
 
-	vk::PipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.polygonMode = vk::PolygonMode::eFill;
@@ -120,15 +114,14 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	rasterizer.depthBiasClamp = 0.0f; // Optional
 	rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
-	vk::PipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sampleShadingEnable = VK_FALSE;
-	multisampling.rasterizationSamples = info.msaaSamples;
+	// @TODO
+	multisampling.rasterizationSamples = vk::SampleCountFlagBits::e4;
 	multisampling.minSampleShading = 1.0f; // Optional
 	multisampling.pSampleMask = nullptr; // Optional
 	multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
 	multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
-	vk::PipelineDepthStencilStateCreateInfo depthStencil = {};
 	depthStencil.depthTestEnable = VK_TRUE;
 	depthStencil.depthWriteEnable = VK_TRUE;
 	depthStencil.depthCompareOp = vk::CompareOp::eLess;
@@ -137,7 +130,6 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	depthStencil.maxDepthBounds = 1.0f; // Optional
 	depthStencil.stencilTestEnable = VK_FALSE;
 
-	vk::PipelineColorBlendAttachmentState colorBlendAttachment = {};
 	colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	colorBlendAttachment.blendEnable = VK_FALSE;
 	colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne; // Optional
@@ -147,7 +139,6 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero; // Optional
 	colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd; // Optional
 
-	vk::PipelineColorBlendStateCreateInfo colorBlending = {};
 	colorBlending.logicOpEnable = VK_FALSE;
 	colorBlending.logicOp = vk::LogicOp::eCopy; // Optional
 	colorBlending.attachmentCount = 1;
@@ -156,6 +147,11 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	colorBlending.blendConstants[1] = 0.0f; // Optional
 	colorBlending.blendConstants[2] = 0.0f; // Optional
 	colorBlending.blendConstants[3] = 0.0f; // Optional
+}
+
+void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& info)
+{
+	deviceContext = &ctx;
 
 	// @Review abstract pipeline layout + vertexInput (aka shader reflect infos) ?
 	ShaderReflector const* shadersInfos[] = { &info.vertexShader.reflector, &info.fragmentShader.reflector };
@@ -165,9 +161,9 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	descriptorSetLayouts.reserve(dsLayout.descriptorSetLayouts.size());
 
 	// add descriptor sets in descriptorSetLayouts in the right set order
-	for (int i = 0; i < dsLayout.descriptorSetLayouts.size(); i++)
+	for (uint32 i = 0; i < dsLayout.descriptorSetLayouts.size(); i++)
 	{
-		descriptorSetLayouts.push_back(*dsLayout.descriptorSetLayouts[(DescriptorSetIndex)i]);
+		descriptorSetLayouts.push_back(*dsLayout.descriptorSetLayouts[i]);
 	}
 
 	// Create pipeline layout
@@ -196,12 +192,12 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	pipelineInfo.stageCount = std::size(shaderStages);
 	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
-	pipelineInfo.pViewportState = &viewportState;
-	pipelineInfo.pRasterizationState = &rasterizer;
-	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = &depthStencil;
-	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pInputAssemblyState = &info.inputAssembly;
+	pipelineInfo.pViewportState = &info.viewportState;
+	pipelineInfo.pRasterizationState = &info.rasterizer;
+	pipelineInfo.pMultisampleState = &info.multisampling;
+	pipelineInfo.pDepthStencilState = &info.depthStencil;
+	pipelineInfo.pColorBlendState = &info.colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
 	pipelineInfo.basePipelineHandle = nullptr; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
@@ -212,7 +208,7 @@ void vkh::GraphicsPipeline::create(vkh::DeviceContext& ctx, CreateInfo const& in
 	pipeline = ctx.device.createGraphicsPipelineUnique(nullptr, { pipelineInfo }, ctx.allocationCallbacks);
 }
 
-std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, vkh::DescriptorSetIndex setIndex, uint32 count)
+std::vector<vk::DescriptorSet> vkh::GraphicsPipeline::createDescriptorSets(vk::DescriptorPool pool, uint32 setIndex, uint32 count)
 {
 	assert(setIndex < MaxSets);
 	assert(count > 0);

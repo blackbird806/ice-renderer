@@ -48,7 +48,7 @@ size_t ShaderStruct::getSize() const
 {
 	size_t sum = 0;
 	for (auto const& member : members)
-		sum += member.getSize();
+		sum += member.getAlignedSize();
 	return sum;
 }
 
@@ -100,6 +100,12 @@ size_t vkh::shaderVarTypeSize(ShaderVarType t)
 
 #define FROM_TYPE_SPECIALISATION(type, enumVal) ShaderVarType vkh::fromType(type) { return ShaderVarType::enumVal;}
 
+bool vkh::isSampler(ShaderVarType type)
+{
+	using enum ShaderVarType;
+	return type == Sampler1D || type == Sampler2D || type == Sampler3D;
+}
+
 FROM_TYPE_SPECIALISATION(bool, Bool)
 FROM_TYPE_SPECIALISATION(float, Float)
 FROM_TYPE_SPECIALISATION(double, Double)
@@ -133,7 +139,7 @@ FROM_TYPE_SPECIALISATION(ShaderSampler2D, Sampler2D)
 FROM_TYPE_SPECIALISATION(ShaderSampler3D, Sampler3D)
 FROM_TYPE_SPECIALISATION(ShaderStruct, ShaderStruct)
 
-size_t ShaderVariable::getSize() const
+size_t ShaderVariable::getAlignedSize() const
 {
 	size_t size = 0;
 
@@ -141,12 +147,12 @@ size_t ShaderVariable::getSize() const
 	{
 		for (auto const& m : structType->members)
 		{
-			size += m.getSize();
+			size += m.getAlignedSize();
 		}
 	}
 	else
 	{
-		size = shaderVarTypeSize(type);
+		size = align(shaderVarTypeSize(type), uniformBufferVariableAllignement);
 	}
 	
 	if (typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
@@ -455,6 +461,11 @@ static ShaderVariable reflectMember(SpvReflectTypeDescription const& typeDescrip
 		}
 #undef COMPONENT_CASE;
 	}
+	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_EXTERNAL_SAMPLED_IMAGE)
+	{
+		// @TODO handle texture sampler the right way
+		mem.type = ShaderVarType::Sampler2D;
+	}
 	else if (mem.typeFlags & SPV_REFLECT_TYPE_FLAG_FLOAT)
 	{
 		if (traits.numeric.scalar.width == 32)
@@ -498,7 +509,7 @@ static ShaderVariable reflectMember(SpvReflectTypeDescription const& typeDescrip
 		mem.ignore = true;
 	}
 	if (mem.type != ShaderVarType::ShaderStruct)
-		mem.arrayElements.resizeRaw(mem.getSize());
+		mem.arrayElements.resizeRaw(mem.getAlignedSize());
 	return mem;
 }
 

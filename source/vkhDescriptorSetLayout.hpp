@@ -12,11 +12,9 @@ namespace vkh
 	enum DescriptorSetIndex : uint32
 	{
 		Default = 0,
-		Lights = 0,
-		PipelineConstants,
-		Textures,
-		Materials,
-		DrawCall,
+		PipelineConstants = 0,
+		Materials = 0,
+		DrawCall = 1,
 
 		MaxSets
 	};
@@ -29,7 +27,7 @@ namespace vkh
 
 		std::vector<ShaderReflector::ReflectedDescriptorSet> reflectedDescriptors;
 		
-		std::unordered_map<DescriptorSetIndex, vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
+		std::unordered_map<uint32, vk::UniqueDescriptorSetLayout> descriptorSetLayouts;
 		DeviceContext* deviceContext;
 	};
 

@@ -21,10 +21,10 @@ void PipelineBatch::create(vkh::GraphicsPipeline& pipeline_, vk::DescriptorPool 
 	}
 	
 	pipelineConstantsSet = pipeline_.createDescriptorSets(pool, vkh::PipelineConstants, 1)[0];
-	texturesSet = pipeline_.createDescriptorSets(pool, vkh::Textures, 1)[0];
+	texturesSet = pipeline_.createDescriptorSets(pool, 1, 1)[0];
 
 	// set arraysize depending of the shader params
-	imageInfosArray.resize(pipeline_.dsLayout.reflectedDescriptors[vkh::Textures].bindings.size());
+	imageInfosArray.resize(pipeline_.dsLayout.reflectedDescriptors[1].bindings.size());
 
 	updatePipelineConstantsSet();
 }
@@ -59,7 +59,7 @@ void PipelineBatch::updatePipelineConstantBuffer()
 			auto const& it = defaultPipelineConstants.find(mem.name);
 			if (it != defaultPipelineConstants.end() && it->second.type != vkh::ShaderVarType::ShaderStruct /*@TODO handle structs*/)
 			{
-				auto const size = it->second.getSize();
+				auto const size = it->second.getAlignedSize();
 				// @TODO handle member alignement
 				pipelineConstantBuffer.writeData({ (uint8*)it->second.arrayElements.data(), size }, offset);
 				offset += size;
@@ -108,7 +108,7 @@ vk::DeviceSize PipelineBatch::getPipelineConstantsBufferEntrySize() const
 
 	for (auto const& binding : pipeline->dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::PipelineConstants].bindings)
 	{
-		size += binding.element.getSize();
+		size += binding.element.getAlignedSize();
 	}
 	
 	return size;

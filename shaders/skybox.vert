@@ -12,6 +12,9 @@ layout(location = 0) out vec3 localPos;
 
 void main()
 {
-    localPos = vec3(inPosition.x * 10000.0, inPosition.y * 10000.0, inPosition.z * 10000.0);
-    gl_Position =  proj * view * vec4(localPos, 1.0);
+    localPos = inPosition;
+    mat4 rotView = mat4(mat3(view)); // remove translation from the view matrix
+    vec4 clipPos = proj * rotView * vec4(localPos, 1.0);
+    clipPos.y *= -1.0;
+    gl_Position = clipPos.xyww;
 }

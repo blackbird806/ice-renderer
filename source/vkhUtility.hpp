@@ -10,5 +10,4 @@ namespace vkh
 	bool hasStencilComponent(vk::Format format) noexcept;
 
 	vk::SampleCountFlagBits getMaxUsableSampleCount(vk::PhysicalDevice physicalDevice);
-	
 }

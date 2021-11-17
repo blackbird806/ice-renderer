@@ -9,38 +9,61 @@
 #include "imgui/imgui.h"
 #include "utility.hpp"
 
-// @REVIEW Material impl
-
-void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline& pipeline, vk::DescriptorPool descriptorPool)
+void Material::create(vkh::DeviceContext& deviceContext, vkh::GraphicsPipeline&& pipeline, vk::DescriptorPool descriptorPool)
 {
-	graphicsPipeline = &pipeline;
+	graphicsPipeline = std::move(pipeline);
 
-	for (auto const& binding : pipeline.dsLayout.reflectedDescriptors[vkh::DescriptorSetIndex::Materials].bindings)
+	for (uint32 bindingNum = 0; auto const& binding : graphicsPipeline.dsLayout.reflectedDescriptors[vkh::Default].bindings)
 	{
-		parameters.push_back(binding.element);
+		if (vkh::isSampler(binding.element.type))
+		{
+			// @TODO default texture
+			paramsTextures[binding.element.name] = { bindingNum, nullptr };
+		}
+		else
+		{
+			parameters.push_back(binding.element);
+		}
+		bindingNum++;
 	}
+	computeParametersSize();
 	
 	vma::AllocationCreateInfo allocInfo;
 	allocInfo.usage = vma::MemoryUsage::eCpuToGpu;
 	
 	vk::BufferCreateInfo bufferCreateInfo;
 	bufferCreateInfo.usage = vk::BufferUsageFlagBits::eUniformBuffer;
-	// @Review alignement
-	bufferCreateInfo.size = getUniformBufferSize();
+	bufferCreateInfo.size = parametersSize;
 	bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	uniformBuffer.create(deviceContext, bufferCreateInfo, allocInfo);
 	
-	descriptorSet = pipeline.createDescriptorSets(descriptorPool, vkh::Materials, 1)[0];
+	parametersSet = graphicsPipeline.createDescriptorSets(descriptorPool, 0, 1)[0];
 }
 
+//@Bug should be reviewd / rewritten
 size_t Material::getUniformBufferSize() const noexcept
 {
-	size_t bufferSize = 0;
+	size_t uniformBufferSize = 0;
+	for (auto const& set : graphicsPipeline.dsLayout.reflectedDescriptors)
+	{
+		for (auto const& binding : set.bindings)
+		{
+			if (isSampler(binding.element.type))
+				continue;
+			
+			uniformBufferSize += binding.element.getAlignedSize();
+		}
+	}
+	return uniformBufferSize;
+}
 
-	for (auto const& p : parameters)
-		bufferSize += p.getSize();
-	
-	return bufferSize;
+void Material::computeParametersSize()
+{
+	parametersSize = 0;
+	for (auto const& param : parameters)
+	{
+		parametersSize += param.getAlignedSize();
+	}
 }
 
 // @Review redo a proper architecture and clean code
@@ -51,7 +74,7 @@ struct ImguiMaterialVisitor
 		if (param.ignore) return;
 		if (param.typeFlags & SPV_REFLECT_TYPE_FLAG_ARRAY)
 		{
-			for (int i = 0; i < param.getSize() / vkh::shaderVarTypeSize(param.type); i++)
+			for (int i = 0; i < param.getAlignedSize() / vkh::shaderVarTypeSize(param.type); i++)
 			{
 				float f = param.arrayElements.get<float>(i);
 				if (ImGui::DragFloat(std::format("{}_{}", param.name, i).c_str(), (float*)&f, 0.01f, 0.0f, 1.0f))
@@ -130,6 +153,9 @@ void Material::imguiEditor()
 
 void Material::updateMember(void* bufferData, size_t& offset, vkh::ShaderVariable const& mem)
 {
+	// samplers should not be stored among parameters
+	assert(!vkh::isSampler(mem.type));
+	
 	if (mem.type == vkh::ShaderVarType::ShaderStruct)
 	{
 		for (auto const& e : mem.structType->members)
@@ -145,7 +171,7 @@ void Material::updateMember(void* bufferData, size_t& offset, vkh::ShaderVariabl
 	}
 }
 
-//@Improve 
+// @Improve 
 void Material::updateBuffer()
 {
 	void* bufferData = uniformBuffer.map();
@@ -159,20 +185,80 @@ void Material::updateBuffer()
 
 void Material::updateDescriptorSets()
 {
-	vk::DescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = uniformBuffer.buffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = VK_WHOLE_SIZE;
+	std::vector<vk::WriteDescriptorSet> parametersdescriptorWrites;
 	
-	vk::WriteDescriptorSet descriptorWrite;
-	descriptorWrite.dstSet = descriptorSet;
-	descriptorWrite.dstBinding = 0;
-	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
-	descriptorWrite.descriptorCount = 1;
-	descriptorWrite.pBufferInfo = &bufferInfo;
+	// pipeline constants
+	//vk::DescriptorBufferInfo pipelineConstantsBufferInfo{};
+	//pipelineConstantsBufferInfo.buffer = uniformBuffer.buffer;
+	//pipelineConstantsBufferInfo.offset = 0;
+	//pipelineConstantsBufferInfo.range = pipelineConstantsSize;
+
+	//vk::WriteDescriptorSet  pipelineConstantsBufferWrite;
+	//pipelineConstantsBufferWrite.dstSet = constantsSet;
+	//pipelineConstantsBufferWrite.dstBinding = 0;
+	//pipelineConstantsBufferWrite.dstArrayElement = 0;
+	//pipelineConstantsBufferWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+	//pipelineConstantsBufferWrite.descriptorCount = 1;
+	//pipelineConstantsBufferWrite.pBufferInfo = &pipelineConstantsBufferInfo;
+	//
+	//parametersdescriptorWrites.push_back(pipelineConstantsBufferWrite);
 	
-	graphicsPipeline->deviceContext->device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
+	// materials parameters
+	{
+		vk::DescriptorBufferInfo paramsbufferInfo{};
+		paramsbufferInfo.buffer = uniformBuffer.buffer;
+		paramsbufferInfo.offset = pipelineConstantsSize;
+		paramsbufferInfo.range = parametersSize;
+
+		vk::WriteDescriptorSet paramsBufferWrite;
+		paramsBufferWrite.dstSet = parametersSet;
+		// @Review
+		paramsBufferWrite.dstBinding = 0; // binding 0 is reserved for material parameters 
+		paramsBufferWrite.dstArrayElement = 0;
+		paramsBufferWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+		paramsBufferWrite.descriptorCount = 1;
+		paramsBufferWrite.pBufferInfo = &paramsbufferInfo;
+
+		parametersdescriptorWrites.push_back(paramsBufferWrite);
+	}
+	
+	for (auto const& [_, textureBinding] : paramsTextures)
+	{
+		vk::DescriptorImageInfo imageInfo;
+		imageInfo.sampler = *textureBinding.texture->sampler;
+		imageInfo.imageView = *textureBinding.texture->imageView;
+		imageInfo.imageLayout = textureBinding.texture->image.getLayout();
+		
+		vk::WriteDescriptorSet textureWrite;
+		textureWrite.dstSet = parametersSet;
+		textureWrite.dstBinding = textureBinding.binding;
+		textureWrite.dstArrayElement = 0;
+		textureWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		textureWrite.descriptorCount = 1;
+		textureWrite.pImageInfo = &imageInfo;
+		
+		parametersdescriptorWrites.push_back(textureWrite);
+	}
+	
+	graphicsPipeline.deviceContext->device.updateDescriptorSets(std::size(parametersdescriptorWrites), parametersdescriptorWrites.data(), 0, nullptr);
+}
+
+void Material::setTextureParameter(std::string const& name, vkh::Texture& texture)
+{
+	auto const it = paramsTextures.find(name);
+	if (it != paramsTextures.end())
+	{
+		it->second.texture = &texture;
+		return;
+	}
+	throw std::runtime_error("texture not found !");
+}
+
+void Material::bind(vk::CommandBuffer cmd)
+{
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline.pipeline);
+	vk::DescriptorSet sets[] = { /*constantsSet,*/ parametersSet};
+	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, *graphicsPipeline.pipelineLayout, 0, std::size(sets), sets, 0, nullptr);
 }
 
 vkh::ShaderVariable* Material::getParameter(std::string const& name)
@@ -187,6 +273,19 @@ vkh::ShaderVariable* Material::getParameter(std::string const& name)
 		return &(*it);
 	return nullptr;
 }
+
+//vkh::ShaderVariable* Material::getConstant(std::string const& name)
+//{
+//	// @TODO handle this more elgantly;
+//	auto& trueParams = constants[0].structType->members;
+//	auto const it = std::find_if(trueParams.begin(), trueParams.end(), [&name](auto const& e)
+//		{
+//			return e.name == name;
+//		});
+//	if (it != trueParams.end())
+//		return &(*it);
+//	return nullptr;
+//}
 
 void updateFromObjMaterial(tinyobj::material_t const& objMtrl, Material& mtrl)
 {
